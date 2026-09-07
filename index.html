@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Centro de Operaciones del Analista · Unidad 1</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<div id="boot-screen" class="boot-screen">
+  <div class="boot-lines">
+    <p class="boot-line">&gt; iniciando_centro_de_operaciones.exe</p>
+    <p class="boot-line">&gt; cargando módulo: analítica de datos</p>
+    <p class="boot-line">&gt; unidad 1 — análisis de requerimientos</p>
+    <p class="boot-line boot-ok">&gt; sistema listo</p>
+  </div>
+</div>
+
+<div class="app-shell" id="app-shell">
+
+  <!-- ======================= RAIL / NAVEGACIÓN ======================= -->
+  <nav class="rail">
+    <div class="rail-brand">
+      <span class="rail-brand-mark">C.O.A.</span>
+      <span class="rail-brand-sub">Centro de Operaciones<br>del Analista</span>
+    </div>
+
+    <div class="rail-nav">
+      <button class="rail-link active" data-nav="inicio">Inicio</button>
+      <button class="rail-link" data-nav="mapa">Unidad 1</button>
+      <button class="rail-link" data-nav="progreso">Mi progreso</button>
+    </div>
+
+    <div class="rail-hud">
+      <div class="hud-row">
+        <span class="hud-label">Agente</span>
+        <span class="hud-value mono" id="hud-nombre">—</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">Nivel</span>
+        <span class="hud-value mono" id="hud-nivel">Novato</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">XP</span>
+        <span class="hud-value mono" id="hud-xp">0 / 700</span>
+      </div>
+      <div class="hud-bar">
+        <div class="hud-bar-fill" id="hud-bar-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ======================= VIEWPORT ======================= -->
+  <main class="viewport">
+
+    <!-- ---------- PANTALLA: INICIO ---------- -->
+    <section class="screen active" id="screen-inicio" data-screen="inicio">
+      <div class="hero">
+        <p class="hero-kicker mono">unidad 1 · análisis de requerimientos</p>
+        <h1 class="hero-title">Centro de Operaciones<br>del Analista</h1>
+        <p class="hero-phrase">Convierte problemas en decisiones con datos.</p>
+        <p class="hero-text">Una misión interactiva para dominar los fundamentos del análisis de requerimientos.</p>
+
+        <div class="hero-panel">
+          <label class="field-label" for="input-nombre">¿Cómo te llamas, analista?</label>
+          <div class="hero-form">
+            <input type="text" id="input-nombre" class="field-input" placeholder="Escribe tu nombre" maxlength="30" autocomplete="off">
+            <button class="btn btn-primary" id="btn-guardar-nombre">Guardar</button>
+          </div>
+          <p class="field-hint" id="nombre-guardado-msg"></p>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat-card">
+            <span class="stat-value mono" id="stat-xp">0</span>
+            <span class="stat-label">XP acumulada</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value mono" id="stat-porcentaje">0%</span>
+            <span class="stat-label">Progreso</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value mono" id="stat-nivel">Novato</span>
+            <span class="stat-label">Nivel actual</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-large" id="btn-iniciar-mision">Iniciar misión</button>
+      </div>
+    </section>
+
+    <!-- ---------- PANTALLA: MAPA DE MISIÓN ---------- -->
+    <section class="screen" id="screen-mapa" data-screen="mapa">
+      <header class="screen-header">
+        <p class="screen-kicker mono">unidad 1</p>
+        <h2 class="screen-title">Mapa de misión</h2>
+        <p class="screen-subtitle">Completa los tres módulos en orden para desbloquear la operación final.</p>
+      </header>
+
+      <div class="module-grid">
+        <article class="module-card" id="card-modulo-1" data-module="1">
+          <div class="module-index mono">01</div>
+          <h3 class="module-title">Determinación de objetivos</h3>
+          <p class="module-desc">Aprende a pasar de un problema a un objetivo claro.</p>
+          <div class="module-status" id="status-modulo-1">Disponible</div>
+          <button class="btn btn-secondary" data-open-module="1">Entrar al módulo</button>
+        </article>
+
+        <article class="module-card" id="card-modulo-2" data-module="2">
+          <div class="module-index mono">02</div>
+          <h3 class="module-title">Evaluación de la situación</h3>
+          <p class="module-desc">Descubre qué debes conocer antes de analizar los datos.</p>
+          <div class="module-status" id="status-modulo-2">Bloqueado</div>
+          <button class="btn btn-secondary" data-open-module="2">Entrar al módulo</button>
+        </article>
+
+        <article class="module-card" id="card-modulo-3" data-module="3">
+          <div class="module-index mono">03</div>
+          <h3 class="module-title">Diseño de plan de trabajo</h3>
+          <p class="module-desc">Organiza actividades, responsables, recursos y tiempos.</p>
+          <div class="module-status" id="status-modulo-3">Bloqueado</div>
+          <button class="btn btn-secondary" data-open-module="3">Entrar al módulo</button>
+        </article>
+      </div>
+
+      <article class="final-card" id="card-final">
+        <div class="final-card-inner">
+          <div>
+            <p class="final-kicker mono">operación de cierre</p>
+            <h3 class="final-title">Desafío final — Operación Analista</h3>
+            <p class="final-desc" id="final-card-desc">Completa los tres módulos para desbloquear esta operación.</p>
+          </div>
+          <button class="btn btn-primary" id="btn-ir-final" disabled>Entrar a la operación</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- ---------- MÓDULO 1.1 ---------- -->
+    <section class="screen" id="screen-modulo-1" data-screen="modulo-1">
+      <header class="screen-header">
+        <p class="screen-kicker mono">módulo 01</p>
+        <h2 class="screen-title">Determinación de objetivos</h2>
+        <p class="screen-subtitle">Todo análisis parte de saber, con precisión, qué queremos averiguar.</p>
+      </header>
+
+      <div class="content-grid">
+        <div class="card">
+          <h3 class="card-title">Problema ≠ objetivo</h3>
+          <p>Un <strong>problema</strong> describe una situación que necesita atención. Un <strong>objetivo</strong> expresa lo que queremos lograr mediante el análisis. Confundirlos es el error más común al empezar un proyecto.</p>
+          <div class="compare-row">
+            <div class="compare-box compare-problem">
+              <span class="compare-label mono">problema</span>
+              <p>"Las ventas están bajando."</p>
+            </div>
+            <div class="compare-arrow">→</div>
+            <div class="compare-box compare-objetivo">
+              <span class="compare-label mono">objetivo</span>
+              <p>"Identificar los factores relacionados con la disminución de ventas."</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Preguntas que ayudan a definir un objetivo</h3>
+          <ul class="check-list">
+            <li>¿Qué queremos conocer?</li>
+            <li>¿Para qué necesitamos saberlo?</li>
+            <li>¿Qué decisión podría apoyarse con los resultados?</li>
+            <li>¿Cómo sabremos que cumplimos el objetivo?</li>
+          </ul>
+        </div>
+
+        <div class="card card-wide">
+          <h3 class="card-title">El objetivo debe ser SMART</h3>
+          <div class="smart-grid">
+            <div class="smart-item">
+              <span class="smart-letter mono">S</span>
+              <p><strong>Específico</strong> — dice exactamente qué se quiere conocer, sin ambigüedad.</p>
+            </div>
+            <div class="smart-item">
+              <span class="smart-letter mono">M</span>
+              <p><strong>Medible</strong> — se puede verificar con datos si se cumplió.</p>
+            </div>
+            <div class="smart-item">
+              <span class="smart-letter mono">A</span>
+              <p><strong>Alcanzable</strong> — es posible lograrlo con los recursos y datos disponibles.</p>
+            </div>
+            <div class="smart-item">
+              <span class="smart-letter mono">R</span>
+              <p><strong>Relevante</strong> — se conecta con una decisión real del negocio o del proyecto.</p>
+            </div>
+            <div class="smart-item">
+              <span class="smart-letter mono">T</span>
+              <p><strong>Temporal</strong> — tiene un plazo definido para resolverse.</p>
+            </div>
+          </div>
+          <p class="card-note">Ejemplo: en lugar de "mejorar las ventas", un objetivo SMART sería "identificar, en las próximas dos semanas, qué tres factores explican la caída de ventas del último trimestre".</p>
+        </div>
+      </div>
+
+      <div class="reto-panel" id="reto-1" data-reto="reto1">
+        <h3 class="reto-title">Mini reto</h3>
+        <p class="reto-question">Una empresa quiere reducir el abandono de clientes. ¿Cuál opción representa mejor un objetivo?</p>
+        <div class="reto-options" id="reto1-options">
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. Hacer un dashboard es una herramienta o actividad. El objetivo debe expresar qué queremos conocer o lograr mediante el análisis.">A. Hacer un dashboard de clientes.</button>
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. 'Analizar los datos' describe una acción general, pero no dice qué queremos descubrir ni para qué. Un objetivo debe ser más específico.">B. Analizar los datos.</button>
+          <button class="reto-option" data-correct="true" data-feedback="Correcto. Esta opción expresa lo que queremos conocer y puede orientar posteriormente el análisis.">C. Identificar los factores relacionados con el abandono de clientes.</button>
+        </div>
+        <p class="reto-feedback" id="reto1-feedback"></p>
+      </div>
+
+      <div class="screen-actions">
+        <button class="btn btn-ghost" data-back-to="mapa">Volver al mapa</button>
+        <button class="btn btn-primary" id="btn-continuar-modulo-2" disabled data-open-module="2">Continuar a Módulo 02</button>
+      </div>
+    </section>
+
+    <!-- ---------- MÓDULO 1.2 ---------- -->
+    <section class="screen" id="screen-modulo-2" data-screen="modulo-2">
+      <header class="screen-header">
+        <p class="screen-kicker mono">módulo 02</p>
+        <h2 class="screen-title">Evaluación de la situación</h2>
+        <p class="screen-subtitle">Antes de analizar cualquier dato, hay que entender bien qué está pasando.</p>
+      </header>
+
+      <div class="scenario-banner">
+        <span class="scenario-label mono">caso guía</span>
+        <p>"Las ventas han disminuido y necesitamos saber qué ocurre."</p>
+      </div>
+
+      <div class="content-grid">
+        <div class="card">
+          <h3 class="card-title">Contexto</h3>
+          <ul class="check-list">
+            <li>¿Dónde ocurre?</li>
+            <li>¿A quién afecta?</li>
+            <li>¿Qué área o proceso está involucrado?</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Situación actual: de opinión a hecho</h3>
+          <div class="compare-row">
+            <div class="compare-box compare-problem">
+              <span class="compare-label mono">opinión</span>
+              <p>"Las ventas están muy mal."</p>
+            </div>
+            <div class="compare-arrow">→</div>
+            <div class="compare-box compare-objetivo">
+              <span class="compare-label mono">hecho medible</span>
+              <p>"Las ventas bajaron 15% durante los últimos tres meses."</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-wide">
+          <h3 class="card-title">Antecedentes</h3>
+          <p>Antes de sacar conclusiones, conviene reconstruir la línea de tiempo:</p>
+          <ul class="check-list">
+            <li>¿Cuándo comenzó?</li>
+            <li>¿Qué ocurrió antes?</li>
+            <li>¿Hubo algún cambio relevante?</li>
+          </ul>
+          <div class="timeline-row mono">
+            <span class="timeline-step">Antes</span>
+            <span class="timeline-arrow">→</span>
+            <span class="timeline-step">Cambio</span>
+            <span class="timeline-arrow">→</span>
+            <span class="timeline-step">Problema</span>
+            <span class="timeline-arrow">→</span>
+            <span class="timeline-step">Ahora</span>
+          </div>
+          <p class="card-note">Cuidado: que dos hechos ocurran en secuencia no significa automáticamente que uno sea la causa del otro.</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Magnitud e impacto</h3>
+          <ul class="check-list">
+            <li>¿Qué tan grande es el problema?</li>
+            <li>¿A cuántas personas afecta?</li>
+            <li>¿Qué áreas afecta?</li>
+            <li>¿Qué consecuencias genera?</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Datos disponibles</h3>
+          <p>Antes de analizar hay que identificar:</p>
+          <ul class="check-list">
+            <li>Qué información existe</li>
+            <li>De dónde proviene</li>
+            <li>Qué periodo cubre</li>
+            <li>Si realmente sirve para responder nuestras preguntas</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Limitaciones frecuentes</h3>
+          <ul class="check-list check-list-warning">
+            <li>Datos incompletos</li>
+            <li>Datos duplicados</li>
+            <li>Información desactualizada</li>
+            <li>Falta de históricos</li>
+            <li>Restricciones de acceso</li>
+            <li>Problemas de calidad</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="reto-panel" id="reto-2" data-reto="reto2">
+        <h3 class="reto-title">Mini reto</h3>
+        <p class="reto-question">El director dice: "Nuestros clientes compran menos". ¿Qué necesitamos conocer primero?</p>
+        <div class="reto-options" id="reto2-options">
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. Esto ya es una hipótesis sobre la causa, y todavía no sabemos si el problema es real ni qué tan grande es.">A. ¿Fue culpa de los precios?</button>
+          <button class="reto-option" data-correct="true" data-feedback="Correcto. Antes de buscar causas necesitamos convertir la opinión en un hecho medible: cuánto cambió y en qué periodo.">B. ¿Desde cuándo y cuánto disminuyeron las compras?</button>
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. La herramienta es parte del plan de trabajo, un paso posterior. Primero hay que entender la situación.">C. ¿Qué herramienta utilizaremos?</button>
+        </div>
+        <p class="reto-feedback" id="reto2-feedback"></p>
+      </div>
+
+      <div class="screen-actions">
+        <button class="btn btn-ghost" data-back-to="mapa">Volver al mapa</button>
+        <button class="btn btn-primary" id="btn-continuar-modulo-3" disabled data-open-module="3">Continuar a Módulo 03</button>
+      </div>
+    </section>
+
+    <!-- ---------- MÓDULO 1.3 ---------- -->
+    <section class="screen" id="screen-modulo-3" data-screen="modulo-3">
+      <header class="screen-header">
+        <p class="screen-kicker mono">módulo 03</p>
+        <h2 class="screen-title">Diseño de plan de trabajo</h2>
+        <p class="screen-subtitle">Un buen objetivo necesita un plan claro para llevarse a cabo.</p>
+      </header>
+
+      <div class="content-grid">
+        <div class="card card-wide">
+          <h3 class="card-title">¿Qué es un plan de trabajo?</h3>
+          <p>Es una herramienta para organizar las actividades necesarias para alcanzar un objetivo, definiendo qué se hará, quién lo hará, cuándo, con qué recursos y qué resultado se espera.</p>
+          <div class="flow-diagram mono">
+            <span class="flow-step">Objetivo</span>
+            <span class="flow-arrow">↓</span>
+            <span class="flow-step">Actividades</span>
+            <span class="flow-arrow">↓</span>
+            <span class="flow-step">Responsables</span>
+            <span class="flow-arrow">↓</span>
+            <span class="flow-step">Tiempos</span>
+            <span class="flow-arrow">↓</span>
+            <span class="flow-step">Resultados</span>
+          </div>
+        </div>
+
+        <div class="card card-wide">
+          <h3 class="card-title">Ejemplo de plan</h3>
+          <div class="table-wrap">
+            <table class="plan-table">
+              <thead>
+                <tr><th>Actividad</th><th>Responsable</th><th>Tiempo</th><th>Resultado</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Recopilar datos</td><td>Ana</td><td>Semana 1</td><td>Datos obtenidos</td></tr>
+                <tr><td>Preparar datos</td><td>Luis</td><td>Semana 2</td><td>Datos listos</td></tr>
+                <tr><td>Analizar</td><td>Ana + Luis</td><td>Semana 3</td><td>Hallazgos</td></tr>
+                <tr><td>Presentar</td><td>Equipo</td><td>Semana 4</td><td>Informe</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Un buen plan es...</h3>
+          <ul class="check-list">
+            <li>Claro</li>
+            <li>Realista</li>
+            <li>Ordenado</li>
+            <li>Medible</li>
+            <li>Flexible</li>
+            <li>Con responsables definidos</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="reto-panel" id="reto-3" data-reto="reto3">
+        <h3 class="reto-title">Mini reto</h3>
+        <p class="reto-question">¿Qué actividad debería realizarse primero en un proyecto de análisis?</p>
+        <div class="reto-options" id="reto3-options">
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. No puedes presentar resultados que todavía no existen.">A. Presentar resultados</button>
+          <button class="reto-option" data-correct="true" data-feedback="Correcto. Sin datos no hay nada que preparar ni analizar; es el primer paso del plan de trabajo.">B. Recopilar datos</button>
+          <button class="reto-option" data-correct="false" data-feedback="Incorrecto. Analizar requiere datos ya recopilados y preparados.">C. Analizar</button>
+        </div>
+        <p class="reto-feedback" id="reto3-feedback"></p>
+      </div>
+
+      <div class="screen-actions">
+        <button class="btn btn-ghost" data-back-to="mapa">Volver al mapa</button>
+        <button class="btn btn-primary" id="btn-ir-mapa-final" data-back-to="mapa">Ver mapa de misión</button>
+      </div>
+    </section>
+
+    <!-- ---------- DESAFÍO FINAL ---------- -->
+    <section class="screen" id="screen-final" data-screen="final">
+      <header class="screen-header">
+        <p class="screen-kicker mono">operación de cierre</p>
+        <h2 class="screen-title">Operación: Analista</h2>
+        <p class="screen-subtitle">Aplica los tres temas de la unidad en un solo caso.</p>
+      </header>
+
+      <div class="scenario-banner">
+        <span class="scenario-label mono">caso final</span>
+        <p>"Una universidad detecta un aumento en el abandono escolar. La dirección quiere utilizar los datos para comprender qué factores están relacionados con el abandono y tomar mejores decisiones."</p>
+      </div>
+
+      <div class="final-progress">
+        <span class="mono" id="final-progress-label">Pregunta 1 de 5</span>
+        <div class="hud-bar hud-bar-final"><div class="hud-bar-fill" id="final-progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <div id="final-question-container"></div>
+
+      <div class="screen-actions">
+        <button class="btn btn-ghost" data-back-to="mapa">Volver al mapa</button>
+      </div>
+    </section>
+
+    <!-- ---------- RESULTADO FINAL ---------- -->
+    <section class="screen" id="screen-resultado" data-screen="resultado">
+      <header class="screen-header">
+        <p class="screen-kicker mono">operación completada</p>
+        <h2 class="screen-title">Informe de resultados</h2>
+      </header>
+
+      <div class="result-panel">
+        <div class="result-grid">
+          <div class="result-item">
+            <span class="result-value mono" id="result-correctas">0/5</span>
+            <span class="result-label">Respuestas correctas</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value mono" id="result-porcentaje">0%</span>
+            <span class="result-label">Porcentaje de acierto</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value mono" id="result-xp">+0 XP</span>
+            <span class="result-label">Experiencia obtenida</span>
+          </div>
+          <div class="result-item">
+            <span class="result-value mono" id="result-nivel">Novato</span>
+            <span class="result-label">Nivel alcanzado</span>
+          </div>
+        </div>
+        <p class="result-message" id="result-mensaje"></p>
+        <div class="screen-actions">
+          <button class="btn btn-ghost" data-back-to="mapa">Volver al mapa</button>
+          <button class="btn btn-primary" data-back-to="progreso">Ver mi progreso</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- MI PROGRESO ---------- -->
+    <section class="screen" id="screen-progreso" data-screen="progreso">
+      <header class="screen-header">
+        <p class="screen-kicker mono">expediente</p>
+        <h2 class="screen-title">Mi progreso</h2>
+      </header>
+
+      <div class="progress-panel">
+        <div class="progress-grid">
+          <div class="progress-item">
+            <span class="progress-label">Nombre</span>
+            <span class="progress-value mono" id="prog-nombre">—</span>
+          </div>
+          <div class="progress-item">
+            <span class="progress-label">Nivel</span>
+            <span class="progress-value mono" id="prog-nivel">Novato</span>
+          </div>
+          <div class="progress-item">
+            <span class="progress-label">XP</span>
+            <span class="progress-value mono" id="prog-xp">0 / 700</span>
+          </div>
+          <div class="progress-item">
+            <span class="progress-label">Avance general</span>
+            <span class="progress-value mono" id="prog-porcentaje">0%</span>
+          </div>
+        </div>
+
+        <div class="hud-bar hud-bar-final"><div class="hud-bar-fill" id="prog-bar-fill" style="width:0%"></div></div>
+
+        <h3 class="card-title progress-subtitle">Mini retos completados</h3>
+        <ul class="progress-checklist" id="progreso-retos-list"></ul>
+
+        <h3 class="card-title progress-subtitle">Desafío final</h3>
+        <p id="progreso-final-status" class="mono">Sin completar</p>
+
+        <button class="btn btn-danger" id="btn-reiniciar">Reiniciar progreso</button>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ---------- MODAL DE CONFIRMACIÓN ---------- -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box">
+    <h3>¿Reiniciar progreso?</h3>
+    <p>Esta acción borrará tu nombre, XP, nivel y todos los mini retos completados. No se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancelar">Cancelar</button>
+      <button class="btn btn-danger" id="modal-confirmar">Sí, reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---------- MENÚ MÓVIL (TOP BAR) ---------- -->
+<div class="mobile-topbar">
+  <span class="rail-brand-mark">C.O.A.</span>
+  <span class="mono" id="mobile-xp">0 XP</span>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
