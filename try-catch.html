@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TRY-CATCH LAB</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body{font-family:system-ui,Segoe UI,sans-serif;background:#f8fafc;color:#0f172a}
+.code{background:#0b1b33;color:#e2e8f0;border-radius:.75rem;padding:1rem;overflow-x:auto;font:13px/1.5 ui-monospace,Consolas,monospace;white-space:pre;margin:.5rem 0}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;box-shadow:0 1px 3px #0001;padding:1.25rem;margin-bottom:1rem}
+.btn{background:#f97316;color:#fff;padding:.5rem 1rem;border-radius:.6rem;font-weight:600;transition:.15s}.btn:hover{background:#ea580c}
+.btn2{background:#0b1b33;color:#fff;padding:.5rem 1rem;border-radius:.6rem;font-weight:600}.btn2:hover{background:#1e3a5f}
+.opt{display:block;width:100%;text-align:left;border:1px solid #cbd5e1;border-radius:.6rem;padding:.6rem .8rem;margin:.35rem 0;background:#fff}
+.opt:hover,.sel{border-color:#f97316;background:#fff7ed}.ok{background:#dcfce7!important;border-color:#16a34a!important}.bad{background:#fee2e2!important;border-color:#dc2626!important}
+input{border:1px solid #cbd5e1;border-radius:.5rem;padding:.45rem .6rem;width:100%}
+.fade{animation:f .3s}@keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h2{font-size:1.6rem;font-weight:800;color:#0b1b33;margin-bottom:.75rem}h3{font-weight:700;color:#0b1b33;margin:.75rem 0 .25rem}p{margin:.4rem 0}
+table{width:100%;font-size:.85rem;border-collapse:collapse}td,th{border:1px solid #e2e8f0;padding:.4rem;text-align:left;vertical-align:top}th{background:#0b1b33;color:#fff}
+</style></head>
+<body>
+<header class="bg-[#0b1b33] sticky top-0 z-10">
+<div class="max-w-5xl mx-auto px-3 pt-2 flex items-center justify-between text-white">
+<b class="text-lg cursor-pointer" onclick="go(-1)">TRY-<span class="text-orange-400">CATCH</span> LAB</b>
+<div class="flex items-center gap-2 text-xs"><div class="w-28 h-2 bg-white/20 rounded"><div id="pb" class="h-2 bg-orange-400 rounded" style="width:0"></div></div><span id="pt">0%</span></div></div>
+<nav id="nav" class="max-w-5xl mx-auto px-3 py-2 flex gap-1 overflow-x-auto"></nav></header>
+<main id="main" class="max-w-5xl mx-auto p-4"></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const C=s=>`<pre class="code">${esc(s)}</pre>`;
+let S;try{S=JSON.parse(localStorage.getItem('tcl'))}catch(e){}
+S=S||{m:{},q:{},r:{}};
+const save=()=>{try{localStorage.setItem('tcl',JSON.stringify(S))}catch(e){}};
+const N=['Errores','try y catch','finally','Excepciones','Ejemplos','Simuladores','Juegos','Evaluaciones','Retos','Apoyo'];
+const pct=()=>Math.round((Object.keys(S.m).length+Object.keys(S.q).length+Object.keys(S.r).length)/22*100);
+let cur=-1;
+function nav(){$('#nav').innerHTML=['Inicio',...N].map((n,i)=>`<button onclick="go(${i-1})" class="px-3 py-1.5 rounded-lg text-sm whitespace-nowrap ${i-1==cur?'bg-orange-500 text-white':'text-slate-200 hover:bg-white/10'}">${i?i+'. ':''}${n}</button>`).join('');const p=pct();$('#pb').style.width=p+'%';$('#pt').textContent=p+'%'}
+function go(i){cur=i;$('#main').innerHTML='<div class="fade">'+(i<0?home():V[i]()+foot(i))+'</div>';nav();scrollTo(0,0);if(I[i])I[i]()}
+function done(i,b){S.m[i]=1;save();nav();b.textContent='✓ Completado'}
+function foot(i){return `<div class="flex flex-wrap gap-2 mt-4"><button class="btn" onclick="done(${i},this)">${S.m[i]?'✓ Completado':'Marcar módulo como completado'}</button>${i<9?`<button class="btn2" onclick="go(${i+1})">Siguiente módulo</button>`:''}</div>`}
+function home(){return `<section class="rounded-2xl bg-gradient-to-br from-[#0b1b33] to-[#1e3a5f] text-white p-8 mb-6">
+<p class="text-orange-300 font-semibold">TRY-CATCH LAB</p><h1 class="text-3xl md:text-4xl font-extrabold my-2">Aprende a controlar los errores en Java</h1>
+<p class="max-w-2xl text-slate-200">Un programa real recibe datos incorrectos, archivos que no existen y usuarios que se equivocan. Manejar excepciones con try, catch y finally hace que tu código siga funcionando o termine de forma ordenada, en lugar de caerse sin explicación.</p>
+<button class="btn mt-4" onclick="go(0)">Comenzar a aprender</button></section>
+<div class="card"><b>Progreso general: ${pct()}%</b><div class="h-3 bg-slate-200 rounded mt-2"><div class="h-3 bg-orange-500 rounded" style="width:${pct()}%"></div></div>
+<p class="text-sm text-slate-600">Módulos: ${Object.keys(S.m).length}/10 · Cuestionarios: ${Object.keys(S.q).length}/4 · Retos: ${Object.keys(S.r).length}/8</p>
+<button class="btn2 mt-2 text-sm" onclick="if(confirm('¿Seguro que quieres borrar todo tu progreso?')){S={m:{},q:{},r:{}};save();go(-1)}">Reiniciar progreso</button></div>
+<h2>Unidades</h2><div class="grid sm:grid-cols-2 md:grid-cols-3 gap-3">${N.map((n,i)=>`<button class="card text-left hover:border-orange-400 !mb-0" onclick="go(${i})"><b>${i+1}. ${n}</b><br><span class="text-sm ${S.m[i]?'text-green-600':'text-slate-500'}">${S.m[i]?'✓ Completado':'Pendiente'}</span></button>`).join('')}</div>`}
+
+/* ---------- Datos ---------- */
+const E=[['ArithmeticException','Operación aritmética inválida, como dividir enteros entre 0.','int x = 5 / 0;','Validar que el divisor sea distinto de 0 o capturar la excepción.'],
+['InputMismatchException','Scanner esperaba un número y recibió otro tipo de dato.','Scanner sc = new Scanner(System.in);\nint n = sc.nextInt(); // el usuario escribe "hola"','Usar sc.hasNextInt() o capturarla y limpiar con sc.next().'],
+['NumberFormatException','Un texto no representa un número válido.','int n = Integer.parseInt("12a");','Capturarla y pedir el dato otra vez.'],
+['ArrayIndexOutOfBoundsException','El índice está fuera del rango 0 a length-1.','int[] a = new int[3];\na[3] = 1;','Comprobar que el índice sea menor que a.length.'],
+['NullPointerException','Se usa un objeto que vale null.','String s = null;\nint l = s.length();','Inicializar los objetos y comprobar s != null.']];
+const EX=[
+['Dividir sin que falle','Dividir dos números sin que el programa termine si el divisor es 0.',`public class Division {
+    public static void main(String[] args) {
+        int a = 10, b = 0;
+        try {
+            System.out.println(a / b);
+        } catch (ArithmeticException e) {
+            System.out.println("Error: no se divide entre 0");
+        }
+        System.out.println("Fin");
+    }
+}`,'1) Se ejecuta try. 2) a / b lanza ArithmeticException. 3) Java salta al catch. 4) El programa continúa con "Fin".','Error: no se divide entre 0 / Fin','¿Qué pasaría con b = 2?'],
+['Leer con Scanner','Leer una edad y controlar que el usuario escriba texto.',`import java.util.*;
+public class Lectura {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        try {
+            System.out.print("Edad: ");
+            int edad = sc.nextInt();
+            System.out.println("Tienes " + edad);
+        } catch (InputMismatchException e) {
+            System.out.println("Escribe solo números");
+        }
+    }
+}`,'1) nextInt() intenta leer un entero. 2) Si el usuario escribe "hola" lanza InputMismatchException. 3) El catch muestra el aviso.','Con "hola": Escribe solo números','¿Cómo repetirías la pregunta hasta que el dato sea válido?'],
+['Texto a número','Convertir un String a int con Integer.parseInt().',`public class Conversion {
+    public static void main(String[] args) {
+        String t = "25x";
+        try {
+            int n = Integer.parseInt(t);
+            System.out.println(n * 2);
+        } catch (NumberFormatException e) {
+            System.out.println(t + " no es un entero");
+        }
+    }
+}`,'1) parseInt recibe "25x". 2) No es un número válido y lanza NumberFormatException. 3) El catch informa.','25x no es un entero','¿Qué imprime si t vale "25"?'],
+['Índice de un arreglo','Acceder a una posición que puede no existir.',`public class Arreglo {
+    public static void main(String[] args) {
+        int[] n = {10, 20, 30};
+        try {
+            System.out.println(n[5]);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Rango válido: 0 a " + (n.length - 1));
+        }
+    }
+}`,'1) El arreglo tiene posiciones 0, 1 y 2. 2) n[5] no existe y lanza la excepción. 3) El catch indica el rango.','Rango válido: 0 a 2','¿Cómo evitarías la excepción con un if?'],
+['try-catch-finally','Ejecutar código final haya o no excepción.',`public class Final {
+    public static void main(String[] args) {
+        try {
+            System.out.println(8 / 0);
+        } catch (ArithmeticException e) {
+            System.out.println("Catch: hubo un error");
+        } finally {
+            System.out.println("Finally: siempre se ejecuta");
+        }
+    }
+}`,'1) try falla. 2) Se ejecuta catch. 3) finally se ejecuta al final, con o sin error.','Catch: hubo un error / Finally: siempre se ejecuta','¿Se ejecutaría finally si no hubiera error?']];
+const EN=E.map(e=>e[0]);
+const QZ=[[
+['¿Qué es una excepción?',['Un error de sintaxis','Un objeto que representa un problema durante la ejecución','Un comentario','Una variable'],1,'Java crea un objeto excepción cuando ocurre un problema mientras el programa corre.'],
+['El programa corre pero calcula mal un promedio. Es un error…',['de sintaxis','de ejecución','lógico','de compilación'],2,'No hay excepción: la lógica del cálculo es incorrecta.'],
+['¿Cuál es un error de sintaxis?',['int x = 5 / 0;','int x = ;','Usar mal una fórmula','Leer un texto'],1,'El compilador detecta "int x = ;" antes de ejecutar.'],
+['¿Por qué controlar excepciones?',['Para que el programa no termine inesperadamente','Para ocultar todos los errores','Para no validar datos','Para compilar más rápido'],0,'Permite reaccionar y continuar o terminar de forma ordenada.']],[
+['¿Qué va dentro de try?',['Código que puede lanzar una excepción','Solo comentarios','El manejo del error','Solo clases'],0,'try encierra las instrucciones riesgosas.'],
+['Si no ocurre ninguna excepción, el catch…',['se ejecuta','se omite','da error','se ejecuta dos veces'],1,'El catch solo se ejecuta cuando se lanza una excepción compatible.'],
+['¿Cuándo se ejecuta finally?',['Solo si hay error','Solo si no hay error','Normalmente siempre, haya o no excepción','Nunca'],2,'Sirve para liberar recursos; se ejecuta con o sin excepción.'],
+['¿Cuál es una buena práctica?',['Dejar catch vacío','Capturar excepciones específicas y manejarlas con sentido','Ignorar el error','Poner todo el programa en un try'],1,'Un catch vacío oculta el problema y dificulta corregirlo.']],[
+['Integer.parseInt("abc") lanza…',EN,2,'El texto no representa un entero: NumberFormatException.'],
+['int[] a = new int[4]; a[4] = 1; lanza…',EN,3,'Las posiciones válidas son 0 a 3.'],
+['String s = null; s.length(); lanza…',EN,4,'Se usa un método sobre un objeto null.'],
+['sc.nextInt() y el usuario escribe "hola" lanza…',EN,1,'Scanner esperaba un entero: InputMismatchException.']]];
+QZ.push(QZ[0].concat(QZ[1],QZ[2]));
+const QN=['Conceptos generales','try-catch-finally','Identificar excepciones','Evaluación final'];
+const G1=[['Una calculadora divide 20 entre 0 con enteros.',EN,0,'Dividir enteros entre 0 lanza ArithmeticException.','int r = 20 / 0;'],
+['El usuario escribe "7a" y el programa hace Integer.parseInt.',EN,2,'"7a" no es un entero válido: NumberFormatException.','Integer.parseInt("7a");'],
+['Se lee un arreglo de 5 elementos en la posición 5.',EN,3,'El último índice es 4.','int[] a = new int[5];\nSystem.out.println(a[5]);'],
+['Se llama un método de una variable que vale null.',EN,4,'Llamar métodos sobre null lanza NullPointerException.','String n = null;\nn.toUpperCase();']];
+const G2=[['¿Qué le falta a este código?',['Falta el catch o finally','Falta un return','x debe ser double','Sobra el println'],0,'Todo try necesita al menos un catch o un finally.','try {\n    int x = 5 / 0;\n}\nSystem.out.println("fin");'],
+['¿Cuál es el problema?',['Exception no existe','El catch vacío oculta el error','Falta el try','Es correcto'],1,'Un catch vacío oculta el error. Muestra un mensaje o corrige el problema.','try { int n = Integer.parseInt("x"); }\ncatch (NumberFormatException e) { }'],
+['¿Por qué no compila?',['El catch genérico va antes del específico','Falta finally','Sobra un try','Falta un import'],0,'El catch específico debe ir antes que Exception; si no, el segundo nunca se alcanza.','try { int x = 1 / 0; }\ncatch (Exception e) { }\ncatch (ArithmeticException e) { }']];
+const G4=[['El usuario escribe "abc" donde se pide la edad. ¿Qué haces?',['Nada, que falle','Capturar InputMismatchException y pedir el dato de nuevo','Poner un catch vacío','Cerrar el programa'],1,'+1 punto. El programa sigue vivo y el usuario corrige. Las otras opciones tumban o esconden el problema.'],
+['Vas a dividir con un divisor que viene del usuario.',['Validar que no sea 0 o capturar ArithmeticException','Suponer que nunca será 0','Usar catch (Exception e) {}','Dividir dos veces'],0,'+1 punto. Prevenir o capturar evita que el programa termine.'],
+['Abres un recurso y necesitas cerrarlo siempre.',['Cerrarlo dentro del try','Cerrarlo en finally o con try-with-resources','No cerrarlo','Cerrarlo solo en catch'],1,'+1 punto. finally se ejecuta haya o no error.']];
+const R=[['División segura','Fácil','Captura la excepción al dividir 8 entre 0.','int a = 8, b = 0;\n// tu código','Pon la división dentro de try.','try {\n    System.out.println(a / b);\n} catch (ArithmeticException e) {\n    System.out.println("División inválida");\n}'],
+['Texto en lugar de número','Fácil','Lee un entero con Scanner sin que falle al escribir texto.','Scanner sc = new Scanner(System.in);\n// tu código','nextInt() lanza InputMismatchException.','try {\n    int n = sc.nextInt();\n    System.out.println(n);\n} catch (InputMismatchException e) {\n    System.out.println("Solo números");\n}'],
+['Cadena a entero','Fácil','Convierte "4o" a int controlando errores.','String t = "4o";\n// tu código','Usa Integer.parseInt y NumberFormatException.','try {\n    int n = Integer.parseInt(t);\n} catch (NumberFormatException e) {\n    System.out.println("No es entero");\n}'],
+['Acceso a un arreglo','Medio','Imprime v[7] sin que falle.','int[] v = {1, 2, 3};\n// tu código','El índice máximo es v.length - 1.','try {\n    System.out.println(v[7]);\n} catch (ArrayIndexOutOfBoundsException e) {\n    System.out.println("Índice inválido");\n}'],
+['Varios catch','Medio','Controla en un mismo try una división y una conversión.','String t = "x";\nint b = 0;\n// tu código','Cada excepción tiene su catch, de la más específica a la más general.','try {\n    int n = Integer.parseInt(t);\n    System.out.println(n / b);\n} catch (NumberFormatException e) {\n    System.out.println("Texto inválido");\n} catch (ArithmeticException e) {\n    System.out.println("División entre 0");\n}'],
+['Incorporar finally','Medio','Muestra "Fin del proceso" siempre, haya error o no.','try {\n    System.out.println(1 / 0);\n} catch (ArithmeticException e) {\n    System.out.println("Error");\n}','Agrega un bloque finally.','try {\n    System.out.println(1 / 0);\n} catch (ArithmeticException e) {\n    System.out.println("Error");\n} finally {\n    System.out.println("Fin del proceso");\n}'],
+['Corrige el programa','Difícil','Este código no compila. Corrígelo.','try { int x = 1 / 0; }\ncatch (Exception e) { }\ncatch (ArithmeticException e) { }','Va primero el catch específico y el catch no debe quedar vacío.','try {\n    int x = 1 / 0;\n} catch (ArithmeticException e) {\n    System.out.println("División entre 0");\n} catch (Exception e) {\n    System.out.println("Error: " + e.getMessage());\n}'],
+['Mini programa','Difícil','Pide dos números, divídelos y controla texto y división entre 0, con finally.','Scanner sc = new Scanner(System.in);\n// tu código','Combina varios catch y finally.','try {\n    int a = sc.nextInt();\n    int b = sc.nextInt();\n    System.out.println(a / b);\n} catch (InputMismatchException e) {\n    System.out.println("Solo números");\n} catch (ArithmeticException e) {\n    System.out.println("No se divide entre 0");\n} finally {\n    System.out.println("Fin");\n}']];
+
+/* ---------- Módulos ---------- */
+const V=[
+()=>`<h2>1. ¿Qué son los errores en programación?</h2><div class="card"><p>Un <b>error</b> es una situación en la que el programa no se comporta como esperamos. Ocurren por instrucciones mal escritas, datos inesperados del usuario o recursos que no existen.</p>
+<table><tr><th>Tipo</th><th>Cuándo ocurre</th><th>Ejemplo</th></tr><tr><td>Sintaxis</td><td>Al compilar; el programa no se genera</td><td><code>int x = ;</code></td></tr><tr><td>Ejecución</td><td>Mientras corre; lanza una excepción</td><td><code>10 / 0</code></td></tr><tr><td>Lógico</td><td>Corre, pero el resultado es incorrecto</td><td>Promedio sin dividir entre la cantidad</td></tr></table></div>
+<div class="card"><h3>¿Qué es una excepción?</h3><p>Es un objeto que Java crea cuando ocurre un error de ejecución. Si nadie la captura, el programa termina y muestra un mensaje.</p>${C('int a = 10, b = 0;\nSystem.out.println(a / b);\n// Exception in thread "main" java.lang.ArithmeticException: / by zero')}
+<p><b>En la vida diaria:</b> un cajero automático no se apaga cuando no tienes saldo; te avisa y te deja intentar otra cosa. Eso es controlar la excepción.</p>
+<p><b>¿Por qué controlarlas?</b> Evitan que el programa termine de golpe y permiten dar mensajes útiles.</p></div>`,
+()=>`<h2>2. Conociendo try y catch</h2><div class="card">${C(`try {
+    // Código que puede producir un error
+} catch (Exception e) {
+    // Código que controla el error
+}`)}<p><b>try</b>: contiene las instrucciones que pueden generar una excepción.</p><p><b>catch (Exception e)</b>: se ejecuta solo si ocurre una excepción de ese tipo; <code>e</code> es el objeto con la información del error.</p>
+<p><b>Si ocurre una excepción:</b> se interrumpe el try y Java salta al catch. <b>Si no ocurre:</b> se ejecuta todo el try y el catch se omite.</p>${C(`try {
+    int r = 10 / 0;                 // lanza ArithmeticException
+    System.out.println("Resultado: " + r); // no se ejecuta
+} catch (ArithmeticException e) {
+    System.out.println("No se puede dividir entre cero");
+}
+System.out.println("El programa continúa");`)}
+<p class="bg-orange-50 border border-orange-300 rounded-lg p-3 text-sm"><b>Buenas prácticas:</b> captura excepciones específicas y no uses <code>catch (Exception e)</code> sin una razón. Mostrar un mensaje no siempre basta: valida los datos antes cuando puedas y decide cómo continuar.</p></div>`,
+()=>`<h2>3. finally</h2><div class="card"><p><b>finally</b> contiene código que se ejecuta normalmente al terminar el bloque try-catch, ocurra o no una excepción. Se usa para liberar recursos, como cerrar un Scanner o un archivo.</p>${C(`Scanner sc = new Scanner(System.in);
+try {
+    int n = sc.nextInt();
+    System.out.println(10 / n);
+} catch (ArithmeticException e) {
+    System.out.println("No se divide entre 0");
+} finally {
+    sc.close();   // se ejecuta siempre
+    System.out.println("Recurso cerrado");
+}`)}<table><tr><th>try-catch</th><th>try-catch-finally</th></tr><tr><td>Controla el error</td><td>Controla el error y además ejecuta un cierre final</td></tr><tr><td>Sin código final garantizado</td><td>El finally corre con o sin excepción</td></tr></table></div>`,
+()=>`<h2>4. Excepciones comunes</h2>${E.map(e=>`<div class="card"><h3 class="!mt-0 text-orange-600">${e[0]}</h3><p><b>Qué es:</b> ${e[1]}</p>${C(e[2])}<p><b>Prevenir o controlar:</b> ${e[3]}</p></div>`).join('')}`,
+()=>`<h2>5. Ejemplos prácticos</h2>${EX.map((x,i)=>`<div class="card"><h3 class="!mt-0">Ejemplo ${i+1}: ${x[0]}</h3><p>${x[1]}</p>${C(x[2])}<p><b>Paso a paso:</b> ${x[3]}</p><p><b>Resultado:</b> <code>${x[4]}</code></p><p class="text-orange-700"><b>Reflexiona:</b> ${x[5]}</p></div>`).join('')}`,
+()=>`<h2>6. Simuladores</h2><p class="text-sm bg-blue-50 border border-blue-200 rounded-lg p-3">Estos simuladores están hechos con JavaScript. No ejecutan Java real: representan visualmente cómo se comportaría un programa Java.</p><div class="flex flex-wrap gap-2 my-3">${SIM.map((s,i)=>`<button id="st${i}" class="btn2" onclick="simTab(${i})">${i+1}. ${s.t}</button>`).join('')}</div><div id="sim" class="card"></div>`,
+()=>`<h2>7. Juegos educativos</h2><div class="flex flex-wrap gap-2 mb-3">${['Identifica la excepción','Encuentra el error','Construye el try-catch','Sobrevive al programa'].map((t,i)=>`<button class="btn2" onclick="gameTab(${i})">${t}</button>`).join('')}</div><div id="box"><p class="text-slate-500">Elige un juego para comenzar.</p></div>`,
+()=>`<h2>8. Evaluaciones</h2><div class="grid sm:grid-cols-2 gap-3 mb-3">${QN.map((n,i)=>`<button class="card text-left hover:border-orange-400 !mb-0" onclick="mcStart(QZ[${i}],'${i}')"><b>${n}</b><br><span class="text-sm text-slate-500">${QZ[i].length} preguntas · Mejor: ${S.q[i]?S.q[i]+'/'+QZ[i].length:'sin intentar'}</span></button>`).join('')}</div><div id="box"></div>`,
+()=>`<h2>9. Retos de programación</h2>${R.map((r,i)=>`<div class="card"><h3 class="!mt-0">Reto ${i+1}: ${r[0]} <span class="text-xs bg-orange-100 text-orange-700 rounded px-2 py-0.5">${r[1]}</span></h3><p>${r[2]}</p>${C(r[3])}<div class="flex flex-wrap gap-2"><button class="btn2 text-sm" onclick="tg('h${i}')">Pista</button><button class="btn2 text-sm" onclick="tg('s${i}')">Ver solución</button><button id="rb${i}" class="btn text-sm" onclick="S.r[${i}]=1;save();nav();this.textContent='✓ Resuelto'">${S.r[i]?'✓ Resuelto':'Marcar como resuelto'}</button></div><p id="h${i}" class="hidden mt-2 text-sm bg-blue-50 rounded p-2">💡 ${r[4]}</p><div id="s${i}" class="hidden">${C(r[5])}</div></div>`).join('')}`,
+()=>`<h2>10. Material de apoyo</h2><div class="card"><h3 class="!mt-0">Glosario</h3><p><b>Excepción:</b> objeto que representa un error en ejecución.</p><p><b>try:</b> bloque con código riesgoso.</p><p><b>catch:</b> bloque que maneja la excepción.</p><p><b>finally:</b> bloque que se ejecuta al final.</p><p><b>Stack trace:</b> detalle de dónde ocurrió el error.</p></div>
+<div class="card overflow-x-auto"><h3 class="!mt-0">Tabla comparativa</h3><table><tr><th>Excepción</th><th>Causa</th><th>Prevención</th></tr>${E.map(e=>`<tr><td>${e[0]}</td><td>${e[1]}</td><td>${e[3]}</td></tr>`).join('')}</table></div>
+<div class="card"><h3 class="!mt-0">Resumen</h3><p><b>try</b> prueba el código · <b>catch</b> atrapa y maneja el error · <b>finally</b> se ejecuta al final.</p><h3>Buenas prácticas</h3><p>• Captura excepciones específicas. • Valida los datos antes de usarlos. • No dejes catch vacíos. • Libera recursos en finally. • Da mensajes claros al usuario.</p><h3>Errores frecuentes</h3><p>• try sin catch ni finally. • catch (Exception e) para todo. • Poner catch genérico antes del específico. • Ignorar el error.</p><h3>FAQ</h3><p><b>¿Puedo tener varios catch?</b> Sí, uno por tipo de excepción, de lo específico a lo general.</p><p><b>¿finally es obligatorio?</b> No, pero es útil para cerrar recursos.</p></div>`];
+const I=[];
+
+/* ---------- Simuladores ---------- */
+const INT=/^[+-]?\d+$/,okInt=t=>INT.test(t)&&Math.abs(+t)<=2147483647;
+const SIM=[
+{t:'División',f:[['a','Dividendo','10'],['b','Divisor','0']],r:v=>{if(!okInt(v.a)||!okInt(v.b))return[0,'Datos no válidos','Escribe dos números enteros.'];if(+v.b===0)return[0,'Exception in thread "main" java.lang.ArithmeticException: / by zero','El divisor es 0. La división entera entre 0 lanza ArithmeticException; un catch evitaría que el programa termine.'];return[1,'Resultado: '+Math.trunc(v.a/v.b),'No hubo excepción: se ejecutó todo el try y el catch se omitió.']}},
+{t:'Conversión',f:[['t','Texto a convertir','25x']],r:v=>okInt(v.t.trim())?[1,'Integer.parseInt devolvió '+(+v.t),'El texto es un entero válido; no hubo excepción.']:[0,'java.lang.NumberFormatException: For input string: "'+v.t+'"','El texto no representa un entero. Integer.parseInt lanza NumberFormatException; capturarla permite pedir el dato otra vez.']},
+{t:'Arreglos',f:[['p','Posición (arreglo con 5 elementos)','7']],pre:'int[] a = {10, 20, 30, 40, 50};  // posiciones 0 a 4',r:v=>{if(!okInt(v.p))return[0,'Datos no válidos','Escribe un entero.'];const p=+v.p;return p<0||p>4?[0,'java.lang.ArrayIndexOutOfBoundsException: Index '+p+' out of bounds for length 5','Esa posición no existe. Los índices válidos son de 0 a length-1.']:[1,'a['+p+'] = '+[10,20,30,40,50][p],'La posición existe; no hubo excepción.']}},
+{t:'Entrada de datos',f:[['x','Valor que "lee" nextInt()','hola']],r:v=>okInt(v.x.trim())?[1,'nextInt() leyó '+(+v.x),'Se leyó un entero válido; no hubo excepción.']:[0,'java.util.InputMismatchException','Scanner esperaba un entero y recibió otro tipo de dato. Puedes usar hasNextInt() o un catch para volver a pedirlo.']}];
+function simTab(k){$('#sim').dataset.k=k;$('#sim').innerHTML=`<h3 class="!mt-0">${SIM[k].t}</h3>${SIM[k].pre?C(SIM[k].pre):''}<div class="grid sm:grid-cols-2 gap-3">${SIM[k].f.map(f=>`<label class="text-sm">${f[1]}<input id="s_${f[0]}" value="${f[2]}"></label>`).join('')}</div><button class="btn my-3" onclick="simRun(${k})">Ejecutar</button><div id="so"></div>`}
+function simRun(k){const v={};SIM[k].f.forEach(f=>v[f[0]]=$('#s_'+f[0]).value);const r=SIM[k].r(v);$('#so').innerHTML=`<div class="rounded-lg p-3 border ${r[0]?'bg-green-50 border-green-400':'bg-red-50 border-red-400'} fade"><code class="break-words">${esc(r[1])}</code><p class="text-sm mt-2">${r[2]}</p></div>`}
+I[5]=()=>simTab(0);
+
+/* ---------- Juegos y cuestionarios (motor de opción múltiple) ---------- */
+let Q;
+function mcStart(l,id,g){Q={l,id,g,i:0,s:0,sel:null};mcShow()}
+function mcShow(){const q=Q.l[Q.i];$('#box').innerHTML=`<div class="card fade"><p class="text-sm text-slate-500">Pregunta ${Q.i+1}/${Q.l.length} · Puntos: ${Q.s}</p><p class="font-semibold my-2">${q[0]}</p>${q[4]?C(q[4]):''}${q[1].map((o,j)=>`<button class="opt" onclick="mcSel(${j},this)">${esc(o)}</button>`).join('')}<button class="btn mt-2" onclick="mcCheck()">Comprobar</button><div id="fb" class="mt-3"></div></div>`;Q.sel=null}
+function mcSel(j,b){if(Q.done)return;Q.sel=j;document.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));b.classList.add('sel')}
+function mcCheck(){if(Q.sel===null||Q.done)return;Q.done=1;const q=Q.l[Q.i],o=document.querySelectorAll('.opt'),r=Q.sel==q[2];if(r)Q.s++;o[q[2]].classList.add('ok');if(!r)o[Q.sel].classList.add('bad');const last=Q.i==Q.l.length-1;$('#fb').innerHTML=`<p class="${r?'text-green-700':'text-red-700'} font-semibold">${r?'¡Correcto!':'Incorrecto.'}</p><p class="text-sm">${q[3]}</p><button class="btn2 mt-2" onclick="${last?'mcEnd()':'Q.i++;Q.done=0;mcShow()'}">${last?'Ver resultado':'Siguiente'}</button>`}
+function mcEnd(){Q.done=0;const n=Q.l.length;if(Q.id!==undefined&&!Q.g){S.q[Q.id]=Math.max(S.q[Q.id]||0,Q.s);save();nav()}$('#box').innerHTML=`<div class="card text-center fade"><p class="text-4xl font-extrabold text-orange-500">${Q.s}/${n}</p><p class="my-2">${Q.s==n?'¡Perfecto!':Q.s>=n*.6?'Buen trabajo, repasa los errores.':'Repasa los módulos y vuelve a intentarlo.'}</p><button class="btn" onclick="mcStart(Q.l,Q.id,Q.g)">Repetir</button></div>`}
+const OL=['try {','    int n = Integer.parseInt(texto);','} catch (NumberFormatException e) {','    System.out.println("Número inválido");','}'];
+let OR;
+function orInit(){OR={p:[],l:OL.map((t,i)=>i).sort(()=>Math.random()-.5)};orShow()}
+function orShow(){$('#or').innerHTML=`<div class="grid md:grid-cols-2 gap-3"><div><b>Fragmentos</b>${OR.l.filter(i=>!OR.p.includes(i)).map(i=>`<button class="opt font-mono text-xs" onclick="OR.p.push(${i});orShow()">${esc(OL[i])}</button>`).join('')}</div><div><b>Tu orden</b>${C(OR.p.map(i=>OL[i]).join('\n')||'(vacío)')}</div></div><button class="btn" onclick="orCheck()">Comprobar</button> <button class="btn2" onclick="orInit()">Reiniciar</button><p id="orf" class="mt-2 font-semibold"></p>`}
+function orCheck(){const ok=OR.p.length==OL.length&&OR.p.every((v,k)=>v==k);$('#orf').className='mt-2 font-semibold '+(ok?'text-green-700':'text-red-700');$('#orf').textContent=ok?'¡Correcto! try va primero, luego catch con la excepción y se cierra con }.':'Aún no. Ordena: try, instrucción riesgosa, catch, mensaje, cierre.'}
+function gameTab(k){if(k==2){$('#box').innerHTML='<div class="card"><p class="mb-2">Ordena las líneas para formar un try-catch correcto.</p><div id="or"></div></div>';orInit()}else mcStart([G1,G2,0,G4][k],undefined,1)}
+function tg(id){$('#'+id).classList.toggle('hidden')}
+go(-1);
+</script></body></html>
