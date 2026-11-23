@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clústeres de computadoras · Sistemas Operativos 2 · TESCHA</title>
+<style>
+/* ===== Tokens de diseño (variables CSS) ===== */
+:root{
+  --bg:#0e1621; --panel:#152232; --line:#26384d; --txt:#d8e2ee; --dim:#8da2b8;
+  --acc:#4cc9f0; --ok:#5fd38d; --warn:#f2b84b; --bad:#ef5b5b;
+  --mono:ui-monospace,"Cascadia Code","Fira Code",Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 var(--sans)}
+nav{position:sticky;top:0;z-index:5;display:flex;gap:.25rem;flex-wrap:wrap;align-items:center;
+  padding:.6rem 1rem;background:#0b121bf2;border-bottom:1px solid var(--line)}
+nav b{font-family:var(--mono);color:var(--acc);margin-right:auto}
+nav a{color:var(--dim);text-decoration:none;padding:.25rem .6rem;border-radius:6px;font-size:.9rem}
+nav a:hover,nav a:focus-visible{color:var(--txt);background:var(--panel);outline:none}
+header{padding:3rem 1rem 1.5rem;max-width:960px;margin:auto}
+h1{font:700 clamp(1.8rem,5vw,3rem)/1.15 var(--mono);margin:0 0 .5rem}
+h1 span{color:var(--acc)}
+header p{color:var(--dim);max-width:62ch;margin:0}
+section{max-width:960px;margin:auto;padding:2.5rem 1rem;border-top:1px solid var(--line)}
+h2{font:600 1.5rem var(--mono);margin:0 0 1rem;color:var(--acc)}
+h3{font-size:1.05rem;margin:0 0 .4rem}
+p{max-width:70ch}
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+.card p{margin:.3rem 0;color:var(--dim);font-size:.95rem}
+code,.mono{font-family:var(--mono);font-size:.88em}
+code{background:#0b121b;padding:.1rem .35rem;border-radius:4px;color:var(--warn)}
+button,select{font:inherit;font-size:.92rem;color:var(--txt);background:#1d3047;border:1px solid var(--line);
+  border-radius:6px;padding:.45rem .9rem;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.primary{background:var(--acc);color:#06222d;border-color:var(--acc);font-weight:600}
+.bar{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin:.8rem 0}
+.log{height:120px;overflow:auto;background:#0b121b;border:1px solid var(--line);border-radius:8px;
+  padding:.5rem .7rem;font:.8rem/1.5 var(--mono);color:var(--dim)}
+.log .e{color:var(--bad)} .log .g{color:var(--ok)}
+
+/* ===== Simulación 1: balanceador ===== */
+#stage{position:relative;padding:1rem 0}
+#lb{margin:0 auto 2.2rem;width:170px;text-align:center;padding:.6rem;border:2px solid var(--acc);
+  border-radius:10px;background:#10303c;font-family:var(--mono)}
+#nodes{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.node{background:var(--panel);border:2px solid var(--ok);border-radius:10px;padding:.7rem;text-align:center;
+  transition:border-color .3s,opacity .3s}
+.node.down{border-color:var(--bad);opacity:.55}
+.node .st{font:.78rem var(--mono);color:var(--ok)} .node.down .st{color:var(--bad)}
+.meter{height:8px;background:#0b121b;border-radius:4px;margin:.5rem 0;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--acc);transition:width .3s}
+.dot{position:absolute;left:0;top:0;width:12px;height:12px;border-radius:50%;background:var(--warn);
+  pointer-events:none;z-index:3}
+
+/* ===== Simulación 2: HPC ===== */
+#tiles{display:grid;grid-template-columns:repeat(16,1fr);gap:3px;max-width:520px;margin:.8rem 0}
+.tile{aspect-ratio:1;background:#1a2a3d;border-radius:3px;transition:background .15s}
+.tile.run{background:var(--warn)} .tile.done{background:var(--ok)}
+.stats{display:grid;gap:.6rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:.8rem 0}
+.stat{background:#0b121b;border:1px solid var(--line);border-radius:8px;padding:.5rem .8rem}
+.stat b{display:block;font:600 1.3rem var(--mono);color:var(--acc)}
+table{border-collapse:collapse;font:.85rem var(--mono);margin-top:.5rem}
+td,th{border:1px solid var(--line);padding:.3rem .7rem;text-align:right}
+
+/* ===== Juego y quiz ===== */
+fieldset{border:1px solid var(--line);border-radius:8px;margin:.7rem 0;padding:.6rem .9rem}
+legend{font-family:var(--mono);color:var(--acc);padding:0 .4rem}
+label{display:block;padding:.2rem 0;cursor:pointer}
+.fb{font-size:.88rem;margin:.3rem 0 0}
+.good{color:var(--ok)} .bad{color:var(--bad)}
+.opt{display:block;width:100%;text-align:left;margin:.35rem 0}
+.opt.ok{border-color:var(--ok);background:#173826} .opt.no{border-color:var(--bad);background:#3b1c20}
+footer{text-align:center;color:var(--dim);padding:2rem 1rem;font-size:.85rem;border-top:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<nav>
+  <b>$ cluster --learn</b>
+  <a href="#teoria">Teoría</a><a href="#balanceo">Balanceo</a><a href="#hpc">HPC</a>
+  <a href="#juego">Construye</a><a href="#quiz">Quiz</a>
+</nav>
+<header>
+  <h1>Clústeres de <span>computadoras</span></h1>
+  <p>Sistemas Operativos 2 · 5.º semestre, Ingeniería Informática · TESCHA. Lee la teoría, experimenta con las simulaciones y revisa el código fuente: cada bloque de JavaScript está comentado.</p>
+</header>
+
+<!-- ============ TEORÍA ============ -->
+<section id="teoria">
+  <h2>Teoría</h2>
+  <h3>¿Qué es un clúster y para qué sirve?</h3>
+  <p>Un clúster es un conjunto de computadoras (<em>nodos</em>) conectadas por red que trabajan coordinadas y se presentan al usuario como un solo sistema. Se usa para tres propósitos: seguir funcionando aunque algo falle, atender más usuarios de los que soporta una sola máquina y resolver cálculos que un solo equipo tardaría días o años en terminar.</p>
+  <h3 style="margin-top:1.2rem">¿Cómo funciona a nivel de red y de sistema operativo?</h3>
+  <div class="grid">
+    <div class="card"><h3>Red</h3><p>Los nodos se interconectan con switches Ethernet (1–100 Gb) o redes de baja latencia como InfiniBand. Suele haber una red de datos, una de administración y otra de <em>heartbeat</em> (latidos para detectar nodos caídos). Una IP virtual flotante permite que el servicio “migre” sin que el cliente note el cambio.</p></div>
+    <div class="card"><h3>Sistema operativo</h3><p>Cada nodo corre su propio SO (casi siempre Linux). Encima, un <em>gestor de recursos</em> (Slurm, Kubernetes, Pacemaker) decide en qué nodo se ejecuta cada proceso. Los procesos se comunican con paso de mensajes (MPI) o memoria compartida distribuida, y los nodos comparten datos mediante NFS, SAN o sistemas de archivos paralelos.</p></div>
+    <div class="card"><h3>Retos para el SO</h3><p>Sincronización sin reloj ni memoria comunes, consistencia de datos replicados, detección de fallos, <em>split-brain</em> (dos nodos creen ser el principal) y <em>fencing</em> (aislar al nodo que falló para proteger los datos).</p></div>
+  </div>
+  <h3 style="margin-top:1.2rem">Tipos de clúster</h3>
+  <div class="grid">
+    <div class="card"><h3>Alta disponibilidad (HA)</h3><p>Nodos redundantes con <em>failover</em>: si el principal cae, otro toma su lugar. Meta: 99.99 % de disponibilidad o más. Ej.: bases de datos de un banco. Herramientas: Pacemaker, Corosync, Keepalived.</p></div>
+    <div class="card"><h3>Balanceo de carga</h3><p>Un balanceador reparte las peticiones entre nodos equivalentes. Escala horizontalmente y tolera fallos. Algoritmos: round robin, menos conexiones, hash de IP. Herramientas: HAProxy, Nginx, LVS.</p></div>
+    <div class="card"><h3>Alto rendimiento (HPC)</h3><p>Un trabajo se divide en tareas que se ejecutan en paralelo en cientos o miles de nodos. Meta: reducir el tiempo de cómputo. Herramientas: MPI, OpenMP, Slurm. Limitado por la ley de Amdahl: la parte secuencial no se acelera.</p></div>
+  </div>
+  <h3 style="margin-top:1.2rem">Ejemplos del mundo real</h3>
+  <div class="grid">
+    <div class="card"><h3>Supercomputadoras</h3><p>Los sistemas del TOP500 (por ejemplo El Capitan o Frontier) son clústeres HPC con cientos de miles de núcleos para clima, física nuclear y simulación molecular.</p></div>
+    <div class="card"><h3>Granjas web</h3><p>Google, Amazon y Netflix reparten el tráfico entre miles de servidores con balanceadores en varias regiones; si un centro de datos cae, otro absorbe la carga.</p></div>
+    <div class="card"><h3>Renderizado 3D</h3><p>Los estudios de animación dividen una película en miles de cuadros y cada nodo de la <em>render farm</em> procesa algunos de ellos al mismo tiempo.</p></div>
+  </div>
+</section>
+
+<!-- ============ SIMULACIÓN 1: BALANCEO ============ -->
+<section id="balanceo">
+  <h2>Simulación 1 · Balanceo de carga</h2>
+  <p>Envía peticiones y observa cómo el balanceador las reparte. Haz clic en un nodo para simularle una caída y comprueba cómo el tráfico se redirige a los nodos vivos.</p>
+  <div class="bar">
+    <button class="primary" id="btnSend">Enviar petición</button>
+    <button id="btnBurst">Ráfaga ×10</button>
+    <label style="display:inline">Algoritmo
+      <select id="algo"><option value="rr">Round robin</option><option value="lc">Menos conexiones</option></select>
+    </label>
+    <button id="btnReset">Reiniciar</button>
+  </div>
+  <div id="stage">
+    <div id="lb">⚖ Load Balancer<br><span class="mono" style="color:var(--dim)" id="lbInfo">0 peticiones</span></div>
+    <div id="nodes"></div>
+  </div>
+  <div class="log" id="lbLog" aria-live="polite"></div>
+</section>
+
+<!-- ============ SIMULACIÓN 2: HPC ============ -->
+<section id="hpc">
+  <h2>Simulación 2 · Alto rendimiento (HPC)</h2>
+  <p>La tarea compleja es renderizar una imagen de 128 fragmentos. Primero el maestro la divide (parte secuencial, 400 ms) y luego los nodos procesan fragmentos en paralelo (60 ms cada uno). Cambia el número de nodos y compara.</p>
+  <div class="bar">
+    <label style="display:inline">Nodos: <b class="mono" id="nLabel">4</b>
+      <input type="range" id="nRange" min="1" max="16" value="4"></label>
+    <button class="primary" id="btnRun">Renderizar</button>
+  </div>
+  <div id="tiles" aria-label="Fragmentos de la imagen"></div>
+  <div class="stats">
+    <div class="stat">Tiempo real<b id="sTime">0.00 s</b></div>
+    <div class="stat">Fragmentos listos<b id="sDone">0/128</b></div>
+    <div class="stat">Speedup vs 1 nodo<b id="sSpeed">—</b></div>
+    <div class="stat">Eficiencia<b id="sEff">—</b></div>
+  </div>
+  <p class="mono" style="color:var(--dim);margin:0">Ley de Amdahl: T(N) = T_secuencial + T_paralelo / N</p>
+  <table id="amdahl"></table>
+</section>
+
+<!-- ============ JUEGO ============ -->
+<section id="juego">
+  <h2>Juego · Construye tu clúster</h2>
+  <p>Elige un escenario y selecciona el componente correcto en cada categoría.</p>
+  <div class="bar"><select id="scen"></select><button class="primary" id="btnCheck">Verificar clúster</button></div>
+  <p id="scenText" style="color:var(--warn)"></p>
+  <div id="gameForm"></div>
+  <p id="gameResult" class="mono"></p>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section id="quiz">
+  <h2>Evaluación</h2>
+  <div class="card" id="quizBox"></div>
+</section>
+<footer>Material didáctico · Sistemas Operativos 2 · Tecnológico de Estudios Superiores de Chalco</footer>
+
+<script>
+/* =========================================================
+   UTILIDADES
+   $ = atajo de querySelector; log() agrega líneas a un panel
+   ========================================================= */
+const $ = s => document.querySelector(s);
+function log(el, msg, cls = '') {
+  const d = document.createElement('div');
+  d.textContent = msg; d.className = cls;
+  el.appendChild(d); el.scrollTop = el.scrollHeight;   // autoscroll
+}
+
+/* =========================================================
+   SIMULACIÓN 1 · BALANCEO DE CARGA
+   Modelo: arreglo de objetos {alive, load, total}.
+   - load  = conexiones activas (baja con el tiempo)
+   - total = peticiones atendidas desde el inicio
+   ========================================================= */
+const NODE_COUNT = 4;
+let nodes = [], rrPointer = 0, sent = 0;
+
+function initNodes() {
+  nodes = Array.from({length: NODE_COUNT}, () => ({alive: true, load: 0, total: 0}));
+  rrPointer = 0; sent = 0; $('#lbLog').innerHTML = ''; renderNodes();
+}
+
+// Dibuja los nodos en el DOM a partir del estado (patrón "estado → vista")
+function renderNodes() {
+  const box = $('#nodes'); box.innerHTML = '';
+  nodes.forEach((n, i) => {
+    const el = document.createElement('div');
+    el.className = 'node' + (n.alive ? '' : ' down'); el.id = 'node' + i;
+    el.innerHTML = `<b class="mono">Nodo ${i + 1}</b>
+      <div class="st">${n.alive ? '● ACTIVO' : '✕ CAÍDO'}</div>
+      <div class="meter"><i style="width:${Math.min(n.load * 12, 100)}%"></i></div>
+      <div class="mono" style="font-size:.78rem">conexiones: ${n.load}<br>atendidas: ${n.total}</div>
+      <button style="margin-top:.5rem">${n.alive ? 'Simular caída' : 'Recuperar'}</button>`;
+    el.querySelector('button').onclick = () => toggleNode(i);
+    box.appendChild(el);
+  });
+  $('#lbInfo').textContent = sent + ' peticiones';
+}
+
+function toggleNode(i) {
+  nodes[i].alive = !nodes[i].alive;
+  if (!nodes[i].alive) nodes[i].load = 0;               // al caer pierde sus conexiones
+  log($('#lbLog'), `Nodo ${i + 1} ${nodes[i].alive ? 'recuperado: vuelve al pool' : 'CAÍDO: sale del pool (health check falló)'}`, nodes[i].alive ? 'g' : 'e');
+  renderNodes();
+}
+
+// Selección del nodo según el algoritmo elegido; solo considera nodos vivos
+function pickNode() {
+  const alive = nodes.map((n, i) => i).filter(i => nodes[i].alive);
+  if (!alive.length) return -1;
+  if ($('#algo').value === 'lc')                          // menos conexiones
+    return alive.reduce((a, b) => nodes[b].load < nodes[a].load ? b : a);
+  // Round robin: avanza el puntero circular hasta encontrar un nodo vivo
+  while (!nodes[rrPointer % NODE_COUNT].alive) rrPointer++;
+  return rrPointer++ % NODE_COUNT;
+}
+
+function sendRequest() {
+  const target = pickNode(); sent++;
+  if (target < 0) { log($('#lbLog'), `Petición #${sent}: 503 Servicio no disponible (todos los nodos caídos)`, 'e'); renderNodes(); return; }
+  // Animación: un punto viaja del balanceador al nodo (Web Animations API)
+  const stage = $('#stage').getBoundingClientRect();
+  const c = r => ({x: r.left + r.width / 2 - stage.left - 6, y: r.top + r.height / 2 - stage.top - 6});
+  const a = c($('#lb').getBoundingClientRect()), b = c($('#node' + target).getBoundingClientRect());
+  const dot = document.createElement('div'); dot.className = 'dot'; $('#stage').appendChild(dot);
+  dot.animate([{transform: `translate(${a.x}px,${a.y}px)`}, {transform: `translate(${b.x}px,${b.y}px)`}],
+              {duration: 450, easing: 'ease-in'}).onfinish = () => {
+    dot.remove();
+    if (nodes[target].alive) { nodes[target].load++; nodes[target].total++; }
+    log($('#lbLog'), `Petición #${sent} → Nodo ${target + 1}`);
+    renderNodes();
+  };
+}
+
+// Las conexiones terminan con el tiempo: cada segundo baja la carga en 1
+setInterval(() => { let ch = false; nodes.forEach(n => { if (n.load > 0) { n.load--; ch = true; } }); if (ch) renderNodes(); }, 1000);
+
+$('#btnSend').onclick = sendRequest;
+$('#btnBurst').onclick = () => { for (let i = 0; i < 10; i++) setTimeout(sendRequest, i * 120); };
+$('#btnReset').onclick = initNodes;
+initNodes();
+
+/* =========================================================
+   SIMULACIÓN 2 · HPC
+   La "imagen" son TILES fragmentos. Una cola de fragmentos pendientes
+   es consumida por N trabajadores; cada uno tarda TILE_MS por fragmento.
+   ========================================================= */
+const TILES = 128, TILE_MS = 60, SERIAL_MS = 400;
+const T1 = SERIAL_MS + TILES * TILE_MS;                  // tiempo teórico con 1 nodo
+let timer = null;
+
+// Crea la cuadrícula de fragmentos
+const tilesEl = $('#tiles');
+for (let i = 0; i < TILES; i++) { const t = document.createElement('div'); t.className = 'tile'; tilesEl.appendChild(t); }
+const tileEls = [...tilesEl.children];
+
+// Tabla teórica según Amdahl para varios N
+function amdahlTable() {
+  let h = '<tr><th>Nodos</th><th>Tiempo teórico</th><th>Speedup</th></tr>';
+  [1, 2, 4, 8, 16].forEach(n => {
+    const t = SERIAL_MS + TILES * TILE_MS / n;
+    h += `<tr><td>${n}</td><td>${(t / 1000).toFixed(2)} s</td><td>${(T1 / t).toFixed(2)}×</td></tr>`;
+  });
+  $('#amdahl').innerHTML = h;
+}
+amdahlTable();
+
+$('#nRange').oninput = e => $('#nLabel').textContent = e.target.value;
+
+function runHPC() {
+  clearInterval(timer);
+  const N = +$('#nRange').value;
+  tileEls.forEach(t => t.className = 'tile');
+  const start = performance.now();
+  let next = 0, done = 0;
+  // workers[i] = {tile, end}: fragmento en proceso y momento en que termina
+  const workers = Array.from({length: N}, () => ({tile: -1, end: 0}));
+
+  timer = setInterval(() => {
+    const now = performance.now() - start;
+    $('#sTime').textContent = (now / 1000).toFixed(2) + ' s';
+    if (now >= SERIAL_MS) {                              // terminó la fase secuencial (división)
+      workers.forEach(w => {
+        if (w.tile >= 0 && now >= w.end) { tileEls[w.tile].className = 'tile done'; w.tile = -1; done++; }
+        if (w.tile < 0 && next < TILES) {                // toma el siguiente fragmento de la cola
+          w.tile = next++; w.end = now + TILE_MS; tileEls[w.tile].className = 'tile run';
+        }
+      });
+    }
+    $('#sDone').textContent = done + '/' + TILES;
+    if (done === TILES) {
+      clearInterval(timer);
+      const sp = T1 / now;
+      $('#sSpeed').textContent = sp.toFixed(2) + '×';
+      $('#sEff').textContent = (sp / N * 100).toFixed(0) + ' %';  // speedup / nodos
+    }
+  }, 20);
+}
+$('#btnRun').onclick = runHPC;
+
+/* =========================================================
+   JUEGO · CONSTRUYE TU CLÚSTER
+   Cada escenario define categorías; "ok" es el índice correcto.
+   ========================================================= */
+const SCEN = [
+  { name: 'Clúster de alta disponibilidad para un banco',
+    text: 'El banco no puede detener sus operaciones ni perder transacciones, aunque falle un servidor.',
+    cats: [
+      {k: 'Red', o: ['Un solo switch Ethernet', 'Redes redundantes (2 switches + enlace de heartbeat)', 'Wi-Fi'], ok: 1, why: 'Un switch único sería un punto único de fallo.'},
+      {k: 'Almacenamiento', o: ['Disco local sin replicación', 'Almacenamiento compartido o replicado (SAN / DRBD)', 'Memorias USB'], ok: 1, why: 'El nodo de respaldo necesita los mismos datos actualizados.'},
+      {k: 'Nodos', o: ['1 nodo muy potente', '2 o más nodos activo/pasivo con failover', '16 nodos de cálculo sin coordinación'], ok: 1, why: 'La redundancia es lo que da la alta disponibilidad.'},
+      {k: 'Software', o: ['MPI', 'Pacemaker + Corosync', 'Blender'], ok: 1, why: 'Pacemaker/Corosync detectan fallos y migran servicios.'}]},
+  { name: 'Clúster HPC para renderizar una película',
+    text: 'Un estudio necesita procesar miles de cuadros 3D lo más rápido posible.',
+    cats: [
+      {k: 'Red', o: ['InfiniBand o Ethernet de 25–100 Gb', 'Wi-Fi', 'Ethernet de 10 Mbps'], ok: 0, why: 'El movimiento de datos requiere ancho de banda alto y baja latencia.'},
+      {k: 'Almacenamiento', o: ['Sistema de archivos paralelo (Lustre / BeeGFS)', 'Un disco USB compartido', 'Solo la RAM del maestro'], ok: 0, why: 'Muchos nodos leen y escriben a la vez.'},
+      {k: 'Nodos', o: ['2 nodos activo/pasivo', 'Un maestro y muchos nodos de cómputo', '1 servidor'], ok: 1, why: 'Más nodos de cómputo, más fragmentos en paralelo.'},
+      {k: 'Software', o: ['Slurm + MPI', 'Pacemaker', 'HAProxy'], ok: 0, why: 'Slurm planifica trabajos y MPI comunica procesos.'}]},
+  { name: 'Clúster de balanceo para una tienda en línea',
+    text: 'En temporada navideña la tienda recibe miles de visitas simultáneas.',
+    cats: [
+      {k: 'Red', o: ['Ethernet Gigabit con IP virtual compartida', 'Bluetooth', 'Cable serial'], ok: 0, why: 'Los clientes acceden siempre a una sola IP; atrás se reparte.'},
+      {k: 'Almacenamiento', o: ['Base de datos compartida y contenido estático replicado', 'Datos distintos en cada nodo sin sincronizar', 'Cinta magnética'], ok: 0, why: 'Cualquier nodo debe poder responder cualquier petición.'},
+      {k: 'Nodos', o: ['Varios nodos web idénticos', '1 solo nodo', 'Nodos con aplicaciones distintas'], ok: 0, why: 'Nodos idénticos son intercambiables y escalan horizontalmente.'},
+      {k: 'Software', o: ['HAProxy o Nginx', 'MPI', 'Slurm'], ok: 0, why: 'Son balanceadores de carga a nivel de aplicación.'}]}
+];
+
+const scenSel = $('#scen');
+SCEN.forEach((s, i) => scenSel.add(new Option(s.name, i)));
+
+function renderGame() {
+  const s = SCEN[scenSel.value];
+  $('#scenText').textContent = s.text; $('#gameResult').textContent = '';
+  $('#gameForm').innerHTML = s.cats.map((c, ci) =>
+    `<fieldset><legend>${c.k}</legend>` +
+    c.o.map((t, oi) => `<label><input type="radio" name="c${ci}" value="${oi}"> ${t}</label>`).join('') +
+    `<p class="fb" id="fb${ci}"></p></fieldset>`).join('');
+}
+scenSel.onchange = renderGame; renderGame();
+
+$('#btnCheck').onclick = () => {
+  const s = SCEN[scenSel.value]; let score = 0;
+  s.cats.forEach((c, ci) => {
+    const sel = document.querySelector(`input[name=c${ci}]:checked`), fb = $('#fb' + ci);
+    if (!sel) { fb.textContent = 'Elige una opción.'; fb.className = 'fb bad'; return; }
+    const good = +sel.value === c.ok; if (good) score++;
+    fb.textContent = (good ? '✔ Correcto. ' : '✘ Incorrecto. ') + c.why;
+    fb.className = 'fb ' + (good ? 'good' : 'bad');
+  });
+  $('#gameResult').textContent = `Puntaje: ${score}/${s.cats.length}` + (score === s.cats.length ? ' · Clúster operativo.' : ' · Revisa los componentes marcados.');
+};
+
+/* =========================================================
+   QUIZ · una pregunta a la vez con retroalimentación inmediata
+   ========================================================= */
+const QZ = [
+  {q: '¿Qué técnica usa un clúster de alta disponibilidad cuando falla el nodo principal?', o: ['Failover hacia un nodo de respaldo', 'Apagar todo el clúster', 'Reiniciar al cliente', 'Dividir la tarea en fragmentos'], ok: 0, why: 'El failover transfiere el servicio a un nodo redundante.'},
+  {q: 'En un balanceador round robin con 3 nodos vivos, ¿a quién va la 4.ª petición?', o: ['Al nodo 3', 'Al nodo 1', 'Al nodo 2', 'Se descarta'], ok: 1, why: 'Se reparten en orden circular: 1, 2, 3, 1…'},
+  {q: 'La ley de Amdahl indica que el speedup de un programa paralelo está limitado por:', o: ['La cantidad de RAM', 'El sistema de archivos', 'La fracción secuencial del programa', 'El color del cable'], ok: 2, why: 'La parte secuencial no se acelera aunque se agreguen nodos.'},
+  {q: '¿Qué es el “split-brain” en un clúster?', o: ['Un nodo con dos procesadores', 'Dos nodos creen ser el principal a la vez', 'Un disco dividido en particiones', 'Un error de compilación'], ok: 1, why: 'Ocurre al perderse la comunicación; el fencing lo previene.'},
+  {q: '¿Qué herramienta se asocia con la comunicación entre procesos en HPC?', o: ['HAProxy', 'Keepalived', 'MPI', 'Nginx'], ok: 2, why: 'MPI es el estándar de paso de mensajes entre procesos distribuidos.'}
+];
+let qi = 0, qScore = 0;
+
+function showQuestion() {
+  const box = $('#quizBox');
+  if (qi >= QZ.length) {
+    box.innerHTML = `<h3>Resultado: ${qScore}/${QZ.length}</h3><p>${qScore >= 4 ? 'Excelente dominio del tema.' : 'Repasa la teoría y vuelve a intentarlo.'}</p><button id="qRe">Reintentar</button>`;
+    $('#qRe').onclick = () => { qi = 0; qScore = 0; showQuestion(); }; return;
+  }
+  const q = QZ[qi];
+  box.innerHTML = `<p class="mono" style="color:var(--dim)">Pregunta ${qi + 1} de ${QZ.length}</p><h3>${q.q}</h3>` +
+    q.o.map((t, i) => `<button class="opt" data-i="${i}">${t}</button>`).join('') + '<p class="fb" id="qfb"></p>';
+  box.querySelectorAll('.opt').forEach(b => b.onclick = () => answer(+b.dataset.i));
+}
+function answer(i) {
+  const q = QZ[qi], btns = document.querySelectorAll('.opt');
+  btns.forEach(b => { b.disabled = true; });               // evita responder dos veces
+  btns[q.ok].classList.add('ok');
+  if (i === q.ok) qScore++; else btns[i].classList.add('no');
+  $('#qfb').innerHTML = (i === q.ok ? '<span class="good">✔ Correcto.</span> ' : '<span class="bad">✘ Incorrecto.</span> ') + q.why +
+    '<br><button id="qNext" style="margin-top:.6rem">' + (qi === QZ.length - 1 ? 'Ver resultado' : 'Siguiente') + '</button>';
+  $('#qNext').onclick = () => { qi++; showQuestion(); };
+}
+showQuestion();
+</script>
+</body>
+</html>
