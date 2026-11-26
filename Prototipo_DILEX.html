@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tamizaje de riesgo de dislexia (12-15 años) - DILEX</title>
+<!-- Tailwind por CDN (versión fija). Requiere internet la primera vez. -->
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+<main class="max-w-2xl mx-auto p-4 sm:p-6">
+<header class="text-center my-4">
+  <h1 class="text-2xl font-bold text-indigo-700">Tamizaje de riesgo de dislexia</h1>
+  <p class="text-sm text-slate-500">Prototipo DILEX · Adolescentes de 12 a 15 años</p>
+</header>
+
+<!-- ========== PANTALLA 1: BIENVENIDA ========== -->
+<section id="s-welcome" class="screen bg-white rounded-2xl shadow p-5 space-y-4">
+  <p class="text-sm">Herramienta de <b>cribado</b>; no emite diagnóstico. Dos pruebas breves (voz y escritura, ~8 min). Usa Chrome o Edge y permite el micrófono; para mejores resultados, un lugar silencioso.</p>
+  <label class="block text-sm font-medium">Nombre o seudónimo
+    <input id="name" class="mt-1 w-full border rounded-lg p-2" placeholder="Ej. Ana"></label>
+  <label class="block text-sm font-medium">Edad
+    <select id="age" class="mt-1 w-full border rounded-lg p-2"><option>12</option><option>13</option><option>14</option><option>15</option></select></label>
+  <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="manual"> Modo manual (sin micrófono: un adulto marca inicio y acierto)</label>
+  <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="examiner" checked> Confirmación del examinador (recomendado): el sistema sugiere y un adulto confirma cada palabra</label>
+  <button id="go" class="w-full bg-indigo-600 text-white rounded-lg p-3 font-semibold">Comenzar</button>
+</section>
+
+<!-- ========== PANTALLA 2: MÓDULO DE VOZ ========== -->
+<section id="s-voice" class="screen hidden bg-white rounded-2xl shadow p-5 text-center space-y-4">
+  <h2 class="font-semibold text-indigo-700">Módulo 1 · Lectura en voz alta (vía fonológica)</h2>
+  <p id="v-prog" class="text-xs text-slate-500"></p>
+  <p class="text-sm text-slate-600">Lee en voz alta, con claridad, la palabra que aparezca (algunas no existen: léelas como suenen).</p>
+  <div id="v-word" class="text-4xl sm:text-5xl font-bold py-10 tracking-wide">…</div>
+  <p id="v-msg" class="text-sm text-amber-600 min-h-[1.25rem]"></p>
+  <div id="v-manual" class="hidden space-y-2">
+    <button id="v-start" class="hidden w-full bg-indigo-600 text-white rounded-lg p-3">Empezó a leer</button>
+    <div id="v-judge" class="hidden space-y-2">
+      <p id="v-sug" class="text-sm bg-slate-100 rounded-lg p-2"></p>
+      <div class="grid grid-cols-2 gap-2">
+        <button data-j="1" class="bg-green-600 text-white rounded-lg p-3">Acierto</button>
+        <button data-j="0" class="bg-red-500 text-white rounded-lg p-3">Error</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PANTALLA 3A: HOMÓFONOS ========== -->
+<section id="s-hom" class="screen hidden bg-white rounded-2xl shadow p-5 space-y-4">
+  <h2 class="font-semibold text-indigo-700">Módulo 2A · Ortografía de homófonos</h2>
+  <div class="flex justify-between text-xs text-slate-500"><span id="h-prog"></span><span id="h-time" class="font-mono">0.0 s</span></div>
+  <div class="h-2 bg-slate-200 rounded"><div id="h-bar" class="h-2 bg-indigo-500 rounded" style="width:100%"></div></div>
+  <p id="h-sent" class="text-xl text-center py-4"></p>
+  <div id="h-opts" class="grid gap-2"></div>
+</section>
+
+<!-- ========== PANTALLA 3B: LECTURA Y COMPRENSIÓN ========== -->
+<section id="s-read" class="screen hidden bg-white rounded-2xl shadow p-5 space-y-4">
+  <h2 class="font-semibold text-indigo-700">Módulo 2B · Velocidad lectora y comprensión</h2>
+  <div id="r-intro"><p class="text-sm mb-3">Lee el texto en silencio a tu ritmo normal. Al terminar pulsa el botón; luego habrá 3 preguntas (sin volver al texto).</p>
+    <button id="r-begin" class="w-full bg-indigo-600 text-white rounded-lg p-3">Mostrar texto</button></div>
+  <div id="r-text" class="hidden space-y-3"><p id="r-p" class="leading-relaxed"></p>
+    <button id="r-end" class="w-full bg-emerald-600 text-white rounded-lg p-3">Terminé de leer</button></div>
+  <div id="r-q" class="hidden space-y-3"><p id="r-qt" class="font-medium"></p><div id="r-qo" class="grid gap-2"></div></div>
+</section>
+
+<!-- ========== PANTALLA 4: RESULTADOS (se genera por JS) ========== -->
+<section id="s-result" class="screen hidden space-y-4"></section>
+
+<footer class="text-xs text-slate-400 text-center mt-6">Prototipo con umbrales ilustrativos; no sustituye una valoración profesional.</footer>
+</main>
+
+<script>
+/* =====================================================================
+   1. UTILIDADES GENERALES
+   ===================================================================== */
+const $ = id => document.getElementById(id);                         // atajo para getElementById
+const sleep = ms => new Promise(r => setTimeout(r, ms));             // pausa asíncrona
+// Muestra una sola pantalla (todas llevan la clase "screen")
+const show = id => { document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); $(id).classList.remove('hidden'); };
+// Mediana: más robusta que el promedio ante valores atípicos (un reactivo muy lento no distorsiona)
+const med = a => { if (!a.length) return null; const s = [...a].sort((x,y)=>x-y), m = s.length>>1; return s.length%2 ? s[m] : (s[m-1]+s[m])/2; };
+const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+// Escapa texto del usuario antes de insertarlo como HTML (evita inyección con el nombre)
+const esc = t => { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; };
+
+// Distancia de Levenshtein: número mínimo de inserciones/borrados/sustituciones entre dos cadenas
+function lev(a, b){
+  const d = Array.from({length: a.length+1}, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1]===b[j-1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+
+/* =====================================================================
+   2. NORMALIZACIÓN FONÉTICA (español de México)
+   Convierte texto a una "forma sonora" aproximada: dos escrituras que suenan
+   igual (b/v, c/s/z por seseo, h muda, ll/y por yeísmo...) quedan idénticas.
+   Así comparamos SONIDOS y no letras. Es una aproximación, no un transcriptor IPA.
+   ===================================================================== */
+function toPhon(t){
+  t = t.toLowerCase()
+    .replace(/ñ/g, '#')                 // protege la ñ (NFD la descompondría)
+    .replace(/ü/g, 'w')                 // "güe/güi": la u se pronuncia
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quita acentos
+    .replace(/[^a-z#]/g, '')            // quita espacios, números y signos (une "gradúa meca" -> "graduameca")
+    .replace(/ch/g, '@')                // dígrafo ch = un solo sonido
+    .replace(/ll/g, 'y')                // yeísmo: ll = y
+    .replace(/x/g, 'ks')                // x -> /ks/ (antes de usar 'x' como símbolo de la jota)
+    .replace(/qu(?=[ei])/g, 'k').replace(/q/g, 'k')
+    .replace(/gu(?=[ei])/g, 'g')        // "gue/gui": la u es muda
+    .replace(/g(?=[ei])/g, 'x').replace(/j/g, 'x')      // ge/gi/j = sonido de jota (símbolo 'x')
+    .replace(/c(?=[ei])/g, 's').replace(/z/g, 's')      // seseo: c(e,i) y z = s
+    .replace(/c/g, 'k')                 // c ante a/o/u = /k/
+    .replace(/v/g, 'b')                 // b y v suenan igual
+    .replace(/h/g, '')                  // h muda (la ch ya se protegió como '@')
+    .replace(/rr/g, 'R').replace(/^r/, 'R')             // erre fuerte
+    .replace(/(.)\1+/g, '$1');          // colapsa letras repetidas ("nn", "ss")
+  return t;
+}
+// Similitud fonética 0..1 (1 = suenan idéntico)
+function phonSim(a, b){
+  const pa = toPhon(a), pb = toPhon(b);
+  if (!pa || !pb) return 0;
+  return 1 - lev(pa, pb) / Math.max(pa.length, pb.length);
+}
+
+/* =====================================================================
+   3. DATOS Y NORMAS ILUSTRATIVAS
+   Valores por edad [12,13,14,15]. Son APROXIMACIONES de trabajo: deben
+   sustituirse por baremos validados en población mexicana.
+   ===================================================================== */
+const LAT = [1300,1200,1100,1000];   // latencia esperada (ms) para iniciar la lectura de una palabra
+const RTW = [7000,6500,6000,5500];   // tiempo esperado (ms) por reactivo ortográfico
+const WPM = [130,145,160,170];       // palabras/min esperadas en lectura silenciosa
+
+// Módulo de voz: 'p' = pseudopalabra, 'r' = palabra real compleja
+const VOICE = [
+  {w:'plorinta',t:'p'},{w:'electrocardiograma',t:'r'},{w:'gradumeca',t:'p'},{w:'extraordinariamente',t:'r'},
+  {w:'trefosio',t:'p'},{w:'arqueológico',t:'r'},{w:'cambilosta',t:'p'},{w:'desproporcionado',t:'r'}];
+// Umbrales de similitud fonética: 'ok' = acierto probable; 'dub' = dudoso (por debajo = error probable).
+// Son más permisivos con pseudopalabras porque el reconocedor tiende a "convertirlas" en palabras reales.
+const THR = { p:{ok:.75, dub:.50}, r:{ok:.85, dub:.65} };
+
+// Módulo escrito: homófonos frecuentes
+const HOM = [
+  {s:'Mañana ___ clase de música.', o:['hay','ahí','ay'], a:'hay'},
+  {s:'Vamos ___ qué pasa con el examen.', o:['a ver','haber'], a:'a ver'},
+  {s:'El plomero cambió el ___ del agua.', o:['tuvo','tubo'], a:'tubo'},
+  {s:'Ella se ___ al recibir la mala noticia.', o:['cayó','calló'], a:'calló'},
+  {s:'Ya ___ toda la tarea.', o:['echo','hecho'], a:'hecho'},
+  {s:'Quiero que ___ a la tienda por pan.', o:['vaya','valla','baya'], a:'vaya'},
+  {s:'El mago va a ___ el secreto.', o:['rebelar','revelar'], a:'revelar'},
+  {s:'No iré ___ me invitas personalmente.', o:['sino','si no'], a:'si no'}];
+const HOM_LIMIT = 20000;  // ms máximos por reactivo
+
+const TEXT = 'Las abejas viven en colmenas donde cada integrante cumple una tarea específica. La reina pone los huevos, las obreras recolectan néctar y limpian la colmena, y los zánganos se encargan de aparearse con la reina. Cuando el néctar llega a la colmena, las obreras lo transforman en miel mediante la evaporación del agua que contiene. En invierno, las abejas se agrupan para conservar el calor y consumen la miel almacenada durante el verano. Sin abejas, muchas plantas no podrían reproducirse porque dependen de ellas para la polinización.';
+const QS = [
+  {q:'¿Quién pone los huevos en la colmena?', o:['Los zánganos','La reina','Las obreras'], a:1},
+  {q:'¿Cómo se transforma el néctar en miel?', o:['Congelándolo','Mezclándolo con polen','Evaporando el agua'], a:2},
+  {q:'¿Por qué son importantes las abejas para las plantas?', o:['Las polinizan','Las riegan','Las protegen del frío'], a:0}];
+
+/* =====================================================================
+   4. ESTADO GLOBAL
+   ===================================================================== */
+const S = {name:'', age:12, manual:false, examiner:true, voice:[], hom:[], read:null};
+
+$('go').onclick = () => {
+  S.name = $('name').value.trim() || 'Participante';
+  S.age = +$('age').value;
+  S.manual = $('manual').checked;
+  S.examiner = $('examiner').checked;
+  S.voice = []; S.hom = []; S.read = null;
+  show('s-voice'); voiceStart();
+};
+
+/* =====================================================================
+   5. AUDIO: detección del inicio del habla por ENERGÍA (RMS)
+   El evento onspeechstart del reconocedor llega tarde y es poco preciso.
+   Medimos directamente la señal del micrófono: el habla empieza cuando el
+   volumen (RMS) supera un umbral calibrado con el ruido ambiente.
+   ===================================================================== */
+const Mic = { ctx:null, an:null, buf:null, stream:null, thr:0.03, ok:false };
+
+const level = () => {                         // volumen instantáneo (RMS) de la señal
+  Mic.an.getFloatTimeDomainData(Mic.buf);
+  let s = 0; for (const x of Mic.buf) s += x*x;
+  return Math.sqrt(s / Mic.buf.length);
+};
+
+async function micInit(){
+  Mic.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:false, autoGainControl:false}});
+  Mic.ctx = new (window.AudioContext || window.webkitAudioContext)();
+  Mic.an = Mic.ctx.createAnalyser(); Mic.an.fftSize = 1024; Mic.buf = new Float32Array(Mic.an.fftSize);
+  Mic.ctx.createMediaStreamSource(Mic.stream).connect(Mic.an);
+  // Calibración: ~1 s de silencio para medir el ruido de fondo; umbral = media + 4 desviaciones
+  await sleep(300);
+  const v = []; for (let i = 0; i < 25; i++) { v.push(level()); await sleep(30); }
+  const m = mean(v), sd = Math.sqrt(mean(v.map(x => (x-m)**2)));
+  Mic.thr = Math.max(0.02, m + 4*sd);         // piso mínimo para no disparar con ruido leve
+  Mic.ok = true;
+}
+function micStop(){ if (Mic.stream) Mic.stream.getTracks().forEach(t => t.stop()); if (Mic.ctx) Mic.ctx.close(); Mic.ok = false; }
+
+// Analiza la secuencia de cuadros [{t, v}] (v = hay voz) tomados cada 20 ms.
+// Devuelve: onset (ms hasta el inicio), dur (duración del habla), pauses (pausas internas ≥ 250 ms)
+function analyze(frames){
+  const MIN_RUN = 3, GAP = 250;               // 3 cuadros (60 ms) = voz real; 250 ms = pausa
+  const runs = []; let start = null;          // tramos continuos con voz
+  frames.forEach((f, i) => {
+    if (f.v && start === null) start = i;
+    if ((!f.v || i === frames.length-1) && start !== null) {
+      const end = f.v ? i : i-1;
+      if (end - start + 1 >= MIN_RUN) runs.push({a: frames[start].t, b: frames[end].t});
+      start = null;
+    }
+  });
+  if (!runs.length) return {onset:null, dur:null, pauses:0};
+  let pauses = 0;
+  for (let i = 1; i < runs.length; i++) if (runs[i].a - runs[i-1].b >= GAP) pauses++;
+  return {onset: runs[0].a, dur: runs[runs.length-1].b - runs[0].a, pauses};
+}
+
+/* =====================================================================
+   6. MÓDULO 1: VOZ
+   ===================================================================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let vi = 0, t0 = 0, pending = null;           // vi: índice actual; t0: instante en que aparece la palabra; pending: registro a confirmar
+
+async function voiceStart(){
+  if (!S.manual && SR) {
+    $('v-word').textContent = '…'; $('v-msg').textContent = 'Calibrando micrófono: guarda silencio un momento…';
+    try { await micInit(); } catch (e) { S.manual = true; }     // sin permiso -> modo manual
+  } else S.manual = true;                      // navegador sin reconocimiento de voz
+  voiceNext(0);
+}
+
+function voiceNext(i){
+  vi = i; pending = null;
+  if (i >= VOICE.length) { micStop(); show('s-hom'); homNext(0); return; }
+  $('v-prog').textContent = `Palabra ${i+1} de ${VOICE.length}`;
+  $('v-msg').textContent = ''; $('v-judge').classList.add('hidden');
+  if (S.manual) {                              // MODO MANUAL: el adulto marca el inicio
+    $('v-manual').classList.remove('hidden'); $('v-start').classList.remove('hidden');
+    $('v-word').textContent = VOICE[i].w; t0 = performance.now();
+  } else {                                     // MODO AUTOMÁTICO
+    $('v-manual').classList.add('hidden'); $('v-word').textContent = '…';
+    listen(VOICE[i]);
+  }
+}
+
+// Evalúa qué tan bien se pronunció: toma la MEJOR alternativa del reconocedor
+// (comparación fonética) y la clasifica como 1 = acierto, 0.5 = dudoso, 0 = error.
+function evaluate(item, alts){
+  let best = {s:0, c:0, t:''};
+  for (const a of alts) { const s = phonSim(a.t, item.w); if (s > best.s) best = {s, c:a.c, t:a.t}; }
+  const th = THR[item.t];
+  let score = best.s >= th.ok ? 1 : best.s >= th.dub ? 0.5 : 0;
+  // En palabras reales una confianza baja del motor hace dudoso el acierto
+  // (en pseudopalabras la confianza siempre es baja, así que no se usa).
+  if (score === 1 && item.t === 'r' && best.c < 0.5) score = 0.5;
+  return {score, simv: best.s, heard: best.t};
+}
+
+function listen(item){
+  const r = new SR();
+  r.lang = 'es-MX'; r.interimResults = true; r.maxAlternatives = 5;
+  let alts = [], srLat = null, corr = 0, prev = '', done = false, frames = [], mon = null, timer = null;
+
+  // Termina el reactivo: calcula métricas y pasa a confirmación o registro
+  const finish = () => {
+    if (done) return; done = true; clearInterval(mon); clearTimeout(timer);
+    const a = Mic.ok ? analyze(frames) : {onset:null, dur:null, pauses:0};
+    const ev = evaluate(item, alts);
+    const rec = {w:item.w, t:item.t, lat: a.onset ?? srLat,   // prioridad: energía; respaldo: evento del navegador
+                 src: a.onset != null ? 'energía' : 'navegador',
+                 dur: a.dur, pauses: a.pauses, corr, heard: ev.heard, simv: ev.simv, sug: ev.score, auto: true};
+    judge(rec);
+  };
+
+  r.onstart = () => {                          // la palabra aparece cuando el micrófono YA escucha
+    $('v-word').textContent = item.w; $('v-msg').textContent = ''; t0 = performance.now();
+    if (Mic.ok) mon = setInterval(() => frames.push({t: performance.now()-t0, v: level() > Mic.thr}), 20);
+    timer = setTimeout(() => { try { r.stop(); } catch(_){} }, 7000);   // tiempo máximo por palabra
+  };
+  r.onspeechstart = () => { if (srLat === null) srLat = performance.now() - t0; };
+  r.onresult = e => {
+    if (srLat === null) srLat = performance.now() - t0;
+    const res = [...e.results], last = res[res.length-1];
+    alts = [];                                 // alternativas del último resultado, con su confianza
+    for (let k = 0; k < last.length; k++) alts.push({t: last[k].transcript, c: last[k].confidence});
+    if (res.length > 1) alts.push({t: res.map(x => x[0].transcript).join(''), c: mean(res.map(x => x[0].confidence))});
+    // Reformulaciones: si el resultado parcial cambia de inicio, posible autocorrección (heurística)
+    const ph = toPhon(last[0].transcript);
+    if (prev && ph && !ph.startsWith(prev.slice(0, 2))) corr++;
+    prev = ph;
+    if (last.isFinal) try { r.stop(); } catch(_){}
+  };
+  r.onerror = e => {
+    if (['not-allowed','service-not-allowed','audio-capture'].includes(e.error)) {   // micrófono bloqueado
+      done = true; clearInterval(mon); S.manual = true; micStop();
+      $('v-msg').textContent = 'Micrófono no disponible: modo manual activado.'; setTimeout(() => voiceNext(vi), 900);
+    }
+  };
+  r.onend = finish;
+  try { r.start(); } catch(e) { S.manual = true; voiceNext(vi); }
+}
+
+// Registra el reactivo. Con examinador (o modo manual) se espera su confirmación;
+// sin examinador se acepta la sugerencia automática.
+function judge(rec){
+  if (S.examiner || S.manual) {
+    pending = rec;
+    $('v-manual').classList.remove('hidden'); $('v-start').classList.add('hidden'); $('v-judge').classList.remove('hidden');
+    const lbl = rec.sug === 1 ? 'Acierto probable' : rec.sug === .5 ? 'Dudoso' : 'Error probable';
+    $('v-sug').textContent = rec.auto
+      ? `Se escuchó: «${rec.heard || '(nada)'}» · Sugerencia: ${lbl} (similitud ${rec.simv.toFixed(2)})`
+      : 'Marca si la lectura fue correcta.';
+  } else { rec.score = rec.sug; S.voice.push(rec); setTimeout(() => voiceNext(vi+1), 500); }
+}
+
+// Modo manual: el adulto marca el inicio del habla
+$('v-start').onclick = () => {
+  const it = VOICE[vi];
+  $('v-start').classList.add('hidden');
+  judge({w:it.w, t:it.t, lat: performance.now() - t0, src:'manual', dur:null, pauses:0, corr:0, auto:false});
+};
+// Confirmación del examinador (Acierto/Error)
+$('v-judge').onclick = e => {
+  const b = e.target.closest('button'); if (!b || !pending) return;
+  pending.score = +b.dataset.j;
+  pending.override = pending.auto && pending.score !== pending.sug && pending.sug !== .5;   // corrigió una sugerencia firme
+  S.voice.push(pending); voiceNext(vi+1);
+};
+
+/* =====================================================================
+   7. MÓDULO 2A: HOMÓFONOS (cronómetro por reactivo)
+   ===================================================================== */
+let hi = 0, ht0 = 0, htimer = null;
+function homNext(i){
+  hi = i; clearInterval(htimer);
+  if (i >= HOM.length) { show('s-read'); return; }
+  const it = HOM[i];
+  $('h-prog').textContent = `Reactivo ${i+1} de ${HOM.length}`;
+  $('h-sent').textContent = it.s; $('h-opts').innerHTML = '';
+  [...it.o].sort(() => Math.random() - .5).forEach(o => {     // opciones en orden aleatorio
+    const b = document.createElement('button');
+    b.className = 'border-2 border-indigo-200 rounded-lg p-3 text-lg hover:bg-indigo-50';
+    b.textContent = o; b.onclick = () => homAnswer(o); $('h-opts').appendChild(b);
+  });
+  ht0 = performance.now();
+  htimer = setInterval(() => {                                 // actualiza cronómetro y barra
+    const el = performance.now() - ht0;
+    $('h-time').textContent = (el/1000).toFixed(1) + ' s';
+    $('h-bar').style.width = Math.max(0, 100 - el/HOM_LIMIT*100) + '%';
+    if (el >= HOM_LIMIT) homAnswer(null);                      // se agotó el tiempo = incorrecto
+  }, 100);
+}
+function homAnswer(o){
+  clearInterval(htimer);
+  S.hom.push({ok: o === HOM[hi].a, rt: Math.min(performance.now() - ht0, HOM_LIMIT)});
+  homNext(hi+1);
+}
+
+/* =====================================================================
+   8. MÓDULO 2B: LECTURA SILENCIOSA Y COMPRENSIÓN
+   ===================================================================== */
+let rt0 = 0, qi = 0, rc = 0;
+$('r-begin').onclick = () => { $('r-intro').classList.add('hidden'); $('r-p').textContent = TEXT; $('r-text').classList.remove('hidden'); rt0 = performance.now(); };
+$('r-end').onclick = () => {
+  const min = (performance.now() - rt0) / 60000, words = TEXT.split(/\s+/).length;
+  S.read = {wpm: words / min, comp: 0};                        // palabras por minuto
+  $('r-text').classList.add('hidden'); $('r-q').classList.remove('hidden'); qi = 0; rc = 0; ask();
+};
+function ask(){
+  if (qi >= QS.length) { S.read.comp = rc; results(); return; }
+  const q = QS[qi]; $('r-qt').textContent = `${qi+1}/${QS.length}. ${q.q}`; $('r-qo').innerHTML = '';
+  q.o.forEach((o, k) => { const b = document.createElement('button');
+    b.className = 'border-2 border-indigo-200 rounded-lg p-3 text-left hover:bg-indigo-50';
+    b.textContent = o; b.onclick = () => { if (k === q.a) rc++; qi++; ask(); }; $('r-qo').appendChild(b); });
+}
+
+/* =====================================================================
+   9. MOTOR DE INFERENCIA (sistema experto basado en reglas)
+   Cada regla: condición sobre los "hechos" -> puntos de riesgo + fundamento clínico.
+   El costo cognitivo se expresa como índice = valor observado / valor esperado por edad.
+   ===================================================================== */
+function infer(f){
+  const RULES = [
+    {id:'R1', name:'Déficit fonológico (precisión)', when: f.vAcc < 60, pts:3,
+     why:'Baja precisión al decodificar palabras y pseudopalabras sugiere dificultad en la conversión grafema-fonema, núcleo del déficit fonológico descrito en la dislexia.'},
+    {id:'R1b', name:'Precisión fonológica limítrofe', when: f.vAcc >= 60 && f.vAcc < 80, pts:1,
+     why:'Precisión por debajo de lo esperado en decodificación; requiere confirmar con pruebas completas.'},
+    {id:'R2', name:'Disociación pseudopalabras vs. palabras', when: f.vpAcc !== null && f.vrAcc !== null && (f.vrAcc - f.vpAcc) >= 25, pts:2,
+     why:'Leer mucho peor las pseudopalabras que las palabras reales indica dependencia del reconocimiento visual global y debilidad de la vía fonológica.'},
+    {id:'R3', name:'Latencia de decodificación elevada', when: f.latIdx !== null && f.latIdx > 1.5, pts:2,
+     why:'Iniciar la lectura >1.5 veces más lento que lo esperado para la edad indica alto costo cognitivo en el acceso fonológico.'},
+    {id:'R4', name:'Déficit ortográfico (homófonos)', when: f.hAcc < 62.5, pts:3,
+     why:'Los errores en homófonos frecuentes reflejan una representación ortográfica léxica pobre (vía léxica/ortográfica), habitual en la dislexia persistente en secundaria.'},
+    {id:'R4b', name:'Ortografía limítrofe', when: f.hAcc >= 62.5 && f.hAcc <= 75, pts:1,
+     why:'Aciertos ligeramente bajos en discriminación ortográfica.'},
+    {id:'R5', name:'Posible estrategia compensatoria', pts:2,
+     when: (f.hAcc >= 85 && f.hIdx > 1.6) || (f.comp >= 66 && f.wpmIdx < 0.7 && f.hAcc >= 75),
+     why:'Precisión alta a costa de tiempos excesivamente lentos: muchos adolescentes con dislexia compensan con relectura, deletreo mental y apoyo del contexto, lo que enmascara el problema en las puntuaciones de aciertos.'},
+    {id:'R6', name:'Velocidad lectora baja', when: f.wpmIdx < 0.7, pts:2,
+     why:'Una fluidez <70% de lo esperado a su edad es un indicador clave de baja automatización de la lectura.'},
+    {id:'R7', name:'Comprensión disminuida', when: f.comp < 50 && f.wpmIdx >= 0.7, pts:1,
+     why:'Comprensión baja con fluidez adecuada no es específica de dislexia (vocabulario, atención u otras causas); conviene explorarla.'},
+    {id:'R8', name:'Lectura entrecortada', pts:1,
+     when: f.pauseAvg !== null && (f.pauseAvg >= 1 || (f.cps !== null && f.cps < 3)),
+     why:'Pausas internas frecuentes o una tasa de habla muy baja (caracteres por segundo) sugieren lectura silabeante o con esfuerzo de decodificación (umbral ilustrativo).'}
+  ];
+  const fired = RULES.filter(r => r.when);
+  const score = fired.reduce((s, r) => s + r.pts, 0);
+  const level = score >= 6 ? 'Alto' : score >= 3 ? 'Moderado' : 'Bajo';   // umbrales ilustrativos
+  return {fired, score, level};
+}
+
+/* =====================================================================
+   10. RESULTADOS (dashboard)
+   ===================================================================== */
+function results(){
+  const a = S.age - 12, V = S.voice;
+  // Precisión como promedio de puntajes (1, 0.5, 0) para reflejar los "dudosos"
+  const acc = arr => arr.length ? mean(arr.map(x => x.score ?? (x.ok ? 1 : 0))) * 100 : null;
+  const lat = med(V.filter(x => x.lat != null).map(x => x.lat));
+  const timed = V.filter(x => x.dur);                          // reactivos con duración medida
+  const f = {
+    vAcc: acc(V) ?? 0, vpAcc: acc(V.filter(x => x.t === 'p')), vrAcc: acc(V.filter(x => x.t === 'r')),
+    latIdx: lat ? lat / LAT[a] : null,
+    hAcc: acc(S.hom), hRT: med(S.hom.map(x => x.rt)),
+    wpm: S.read.wpm, wpmIdx: S.read.wpm / WPM[a], comp: S.read.comp / QS.length * 100,
+    pauseAvg: timed.length ? mean(timed.map(x => x.pauses)) : null,
+    cps: timed.length ? mean(timed.map(x => x.w.length / (x.dur/1000))) : null   // caracteres por segundo
+  };
+  f.hIdx = f.hRT / RTW[a];
+  const r = infer(f);
+  const col = {Bajo:'bg-green-600', Moderado:'bg-amber-500', Alto:'bg-red-600'}[r.level];
+  const pct = x => x === null ? 'n/d' : Math.round(x) + '%';
+  const card = (t, v, s) => `<div class="bg-white rounded-xl shadow p-3"><p class="text-xs text-slate-500">${t}</p><p class="text-xl font-bold">${v}</p><p class="text-xs text-slate-400">${s}</p></div>`;
+  // Calidad de la medición automática: dudosos, correcciones del examinador y reformulaciones
+  const doubt = V.filter(x => x.sug === .5).length, over = V.filter(x => x.override).length, corr = V.reduce((s, x) => s + (x.corr || 0), 0);
+  const src = V.length ? (V.every(x => x.src === 'manual') ? 'manual' : 'energía de la señal + reconocimiento') : 'n/d';
+  $('s-result').innerHTML = `
+    <div class="bg-white rounded-2xl shadow p-5 text-center">
+      <p class="text-sm text-slate-500">${esc(S.name)} · ${S.age} años</p>
+      <p class="mt-2 text-sm">Nivel de riesgo (cribado)</p>
+      <span class="inline-block ${col} text-white text-2xl font-bold rounded-full px-6 py-2 mt-1">${r.level}</span>
+      <p class="text-xs text-slate-400 mt-2">Puntaje de reglas: ${r.score}</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      ${card('Precisión fonológica', pct(f.vAcc), `Pseudopal.: ${pct(f.vpAcc)} · Palabras: ${pct(f.vrAcc)}`)}
+      ${card('Latencia mediana', lat ? Math.round(lat) + ' ms' : 'n/d', `Índice de costo: ${f.latIdx ? f.latIdx.toFixed(2) : 'n/d'} (esperado ≈1)`)}
+      ${card('Homófonos', pct(f.hAcc), `Tiempo mediano ${(f.hRT/1000).toFixed(1)} s · índice ${f.hIdx.toFixed(2)}`)}
+      ${card('Lectura', Math.round(f.wpm) + ' ppm', `Esperado ≈${WPM[a]} · Comprensión ${pct(f.comp)}`)}
+      ${card('Fluidez oral', f.cps ? f.cps.toFixed(1) + ' car/s' : 'n/d', `Pausas internas por palabra: ${f.pauseAvg !== null ? f.pauseAvg.toFixed(1) : 'n/d'}`)}
+      ${card('Calidad de medición', `${doubt} dudosas`, `Medición: ${src} · reformulaciones: ${corr} · correcciones del examinador: ${over}`)}
+    </div>
+    <div class="bg-white rounded-2xl shadow p-5 space-y-3">
+      <h3 class="font-semibold text-indigo-700">Reglas activadas</h3>
+      ${r.fired.length ? r.fired.map(x => `<div class="border-l-4 border-indigo-400 pl-3"><p class="font-medium text-sm">${x.id} · ${x.name} <span class="text-slate-400">(+${x.pts})</span></p><p class="text-sm text-slate-600">${x.why}</p></div>`).join('')
+        : '<p class="text-sm text-slate-600">No se activó ninguna regla de riesgo con los datos obtenidos.</p>'}
+    </div>
+    <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 text-sm space-y-2">
+      <h3 class="font-semibold text-indigo-800">Recomendación formal</h3>
+      <p>Este resultado es solo un <b>tamizaje</b> y no constituye un diagnóstico. ${r.level === 'Bajo' ? 'Si el docente o la familia tienen preocupaciones, se sugiere de todos modos consultar.' : 'Se recomienda solicitar una valoración integral'} a través de la <b>USAER</b> de la escuela (o la Unidad de Educación Especial de la SEP) o con un <b>especialista en neuropsicología</b> con formación avalada (por ejemplo, servicios clínicos de instituciones universitarias como la UNAM). Una evaluación completa incluye pruebas estandarizadas, descarte de problemas visuales/auditivos y análisis del contexto escolar.</p>
+      <p class="text-xs text-slate-500">Normas y umbrales ilustrativos; los reactivos no reproducen BANETA ni PRODISLEX y deben validarse antes de cualquier uso clínico. El reconocimiento de voz es aproximado: confirma los resultados con juicio clínico.</p>
+    </div>
+    <div class="flex gap-2"><button onclick="window.print()" class="flex-1 bg-slate-700 text-white rounded-lg p-3">Imprimir</button>
+    <button onclick="location.reload()" class="flex-1 bg-indigo-600 text-white rounded-lg p-3">Nueva evaluación</button></div>`;
+  show('s-result');
+}
+</script>
+</body>
+</html>
